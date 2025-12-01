@@ -146,74 +146,79 @@ def get_v2ex_hot():
     return topics
 
 # -----------------------------------------------------------------------------
-# 6. [NEW] 微博热搜 (Weibo Hot)
+# 6. [FIXED] 微博热搜 (使用移动端 API，防爬更松)
 # -----------------------------------------------------------------------------
 def get_weibo_hot():
     hot_list = []
     print("Fetching Weibo Hot...")
     try:
-        # 微博官方 Ajax 接口
-        url = "https://weibo.com/ajax/side/hotSearch"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        # 使用 m.weibo.cn 移动端接口
+        url = "https://m.weibo.cn/api/container/getIndex?containerid=106003type%3D25%26t%3D3%26disable_hot%3D1%26filter_type%3Drealtimehot"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G9600) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Mobile Safari/537.36',
+            'Referer': 'https://m.weibo.cn/'
+        }
         resp = requests.get(url, headers=headers, timeout=10).json()
         
-        # 解析数据
-        items = resp.get('data', {}).get('realtime', [])
-        for item in items[:10]: # 取前10条
-            # 过滤掉置顶广告（通常没有 rank 或者 key 比较特殊，这里简单判断 note 存在即可）
-            title = item.get('note')
-            if not title: continue # 跳过没有标题的
+        # 移动端数据的层级不一样
+        cards = resp.get('data', {}).get('cards', [])[0].get('card_group', [])
+        
+        for card in cards[:10]:
+            title = card.get('desc')
+            if not title: continue
             
-            # 构造搜索链接
-            search_query = item.get('word', '')
-            link = f"https://s.weibo.com/weibo?q={search_query}&Refer=top"
+            # 链接
+            link = card.get('scheme', '#')
             
-            # 热度 (num)
-            heat = item.get('num', 0)
-            if heat > 10000:
-                heat_str = f"🔥{heat/10000:.1f}w"
+            # 热度
+            desc_extr = card.get('desc_extr', '') # 类似 "234.1万"
+            if desc_extr:
+                 heat = f"🔥{desc_extr}"
             else:
-                heat_str = f"🔥{heat}"
-                
+                 heat = "🔥Hot"
+
             hot_list.append({
                 "title": title,
                 "link": link,
-                "heat": heat_str
+                "heat": heat
             })
     except Exception as e:
         print(f"Weibo Error: {e}")
-        hot_list.append({"title": "微博热搜抓取失败", "link": "#", "heat": ""})
+        hot_list.append({"title": "微博获取失败 (IP限制)", "link": "#", "heat": ""})
     return hot_list
-
 # -----------------------------------------------------------------------------
-# 7. [NEW] 知乎热榜 (Zhihu Hot)
+# 7. [FIXED] 知乎热榜 (使用聚合 API 绕过 IP 限制)
 # -----------------------------------------------------------------------------
 def get_zhihu_hot():
     hot_list = []
     print("Fetching Zhihu Hot...")
     try:
-        # 知乎 API V3
-        url = "https://www.zhihu.com/api/v3/feed/topstory/hot-lists/total_heat"
-        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        resp = requests.get(url, headers=headers, timeout=10).json()
+        # 使用第三方聚合接口 (韩小韩 API，常用于个人 Dashboard)
+        # 如果这个接口失效，可以换成 https://tenapi.cn/v2/zhihuhot
+        url = "https://api.vvhan.com/api/hotlist?type=zhihuHot"
+        headers = {'User-Agent': 'Mozilla/5.0'}
         
+        resp = requests.get(url, headers=headers, timeout=15).json()
+        
+        # 解析 data 字段
         data = resp.get('data', [])
-        for item in data[:8]:
-            target = item.get('target', {})
-            title = target.get('title_area', {}).get('text', '') or target.get('title', '')
-            link = target.get('link', {}).get('url', '') or f"https://www.zhihu.com/question/{target.get('id')}"
+        for item in data[:10]:
+            title = item.get('title')
+            link = item.get('url') # 移动端链接
+            heat = item.get('hot', 'Hot')
             
-            # 热度文本
-            heat_text = item.get('detail_text', '')
+            # 简单的格式化
+            if isinstance(heat, str) and '万' not in heat:
+                heat = f"🔥{heat}"
             
             hot_list.append({
                 "title": title,
                 "link": link,
-                "heat": heat_text
+                "heat": heat
             })
     except Exception as e:
         print(f"Zhihu Error: {e}")
-        hot_list.append({"title": "知乎热榜抓取失败", "link": "#", "heat": ""})
+        hot_list.append({"title": "知乎获取失败 (建议检查API)", "link": "#", "heat": ""})
     return hot_list
 
 
