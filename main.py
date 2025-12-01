@@ -1,19 +1,20 @@
+# -*- coding: utf-8 -*-
 import requests
 import datetime
 import os
 
-# 1. ×¥È¡Êı¾İ
+# 1. Fetch data
 def get_quote():
     try:
         url = "https://v1.hitokoto.cn/"
         res = requests.get(url).json()
-        return f"{res['hitokoto']} ¡ª¡ª {res['from']}"
+        return f"{res['hitokoto']} -- {res['from']}"
     except Exception as e:
-        return "½ñÌìÍøÂçÓĞµãÀÛ£¬ÔİÎŞÃûÑÔ¡£"
+        return "Network error, no quote today."
 
-# 2. Éú³É HTML ÄÚÈİ
+# 2. Generate HTML
 def generate_html(content):
-    # »ñÈ¡µ±Ç°±±¾©Ê±¼ä (UTC+8)
+    # Get Beijing Time (UTC+8)
     utc_now = datetime.datetime.utcnow()
     beijing_time = utc_now + datetime.timedelta(hours=8)
     date_str = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
@@ -23,7 +24,7 @@ def generate_html(content):
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>ÎÒµÄÃ¿ÈÕÔç±¨</title>
+        <title>Daily News</title>
         <style>
             body {{ font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; text-align: center; }}
             .card {{ border: 1px solid #ddd; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }}
@@ -34,20 +35,18 @@ def generate_html(content):
     </head>
     <body>
         <div class="card">
-            <h1>?? Ã¿ÈÕÔç±¨</h1>
-            <p class="quote">¡°{content}¡±</p>
-            <p class="time">¸üĞÂÊ±¼ä (±±¾©Ê±¼ä): {date_str}</p>
+            <h1>ğŸ“… Daily Morning News</h1>
+            <p class="quote">â€œ{content}â€</p>
+            <p class="time">Update Time (Beijing): {date_str}</p>
         </div>
     </body>
     </html>
     """
     
-    # 3. Ğ´ÈëÎÄ¼ş index.html
-    # ÕâÑù GitHub Pages Ä¬ÈÏ¾Í»áÕ¹Ê¾Õâ¸öÎÄ¼ş
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
 
 if __name__ == "__main__":
     quote = get_quote()
     generate_html(quote)
-    print("ÍøÒ³Éú³É³É¹¦£¡")
+    print("HTML generated successfully!")
