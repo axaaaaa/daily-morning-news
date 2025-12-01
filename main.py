@@ -6,38 +6,38 @@ from bs4 import BeautifulSoup
 import datetime
 import os
 
-# --- 1. 获取科技新闻 (基于 36Kr RSS) ---
+# -----------------------------------------------------------------------------
+# 1. 科技新闻 (36Kr RSS)
+# -----------------------------------------------------------------------------
 def get_news():
     news_list = []
     try:
-        # 使用 36Kr 的 RSS 源
         rss_url = "https://36kr.com/feed"
         feed = feedparser.parse(rss_url)
-        # 只取前 10 条
         for entry in feed.entries[:10]:
             news_list.append({
                 "title": entry.title,
                 "link": entry.link,
-                "date": entry.published[:10] # 截取日期
+                "date": entry.published[:10]
             })
     except Exception as e:
         print(f"News Error: {e}")
-        news_list.append({"title": "新闻抓取失败，请检查网络", "link": "#", "date": ""})
+        news_list.append({"title": "36Kr 抓取失败", "link": "#", "date": ""})
     return news_list
 
-# --- 2. 获取 GitHub Python 热榜 (爬虫) ---
+# -----------------------------------------------------------------------------
+# 2. GitHub Python 热榜
+# -----------------------------------------------------------------------------
 def get_github_trending():
     projects = []
     try:
         url = "https://github.com/trending/python?since=daily"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
-        r = requests.get(url, headers=headers)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        r = requests.get(url, headers=headers, timeout=15)
         soup = BeautifulSoup(r.text, 'html.parser')
         
-        # 抓取项目行
         rows = soup.select('article.Box-row')
-        for row in rows[:8]: # 只取前 8 个
-            # 获取项目名
+        for row in rows[:8]:
             title_tag = row.select_one('h2 a')
             if title_tag:
                 title = title_tag.text.strip().replace("\n", "").replace(" ", "")
@@ -45,11 +45,9 @@ def get_github_trending():
             else:
                 continue
 
-            # 获取描述 (有的项目没有描述)
             desc_tag = row.select_one('p')
             desc = desc_tag.text.strip() if desc_tag else "暂无描述"
             
-            # 获取 Star 数
             star_tag = row.select_one('span.d-inline-block.float-sm-right')
             stars = star_tag.text.strip().split()[0] if star_tag else "0"
             
@@ -64,10 +62,11 @@ def get_github_trending():
         projects.append({"title": "GitHub 抓取失败", "link": "#", "desc": str(e), "stars": "0"})
     return projects
 
-# --- 3. 获取金融数据 (上证、纳指、BTC) ---
+# -----------------------------------------------------------------------------
+# 3. 金融数据 (Stocks/Crypto)
+# -----------------------------------------------------------------------------
 def get_finance():
     data = []
-    # 代码: 上证指数(000001.SS), 纳斯达克(^IXIC), 比特币(BTC-USD), 英伟达(NVDA)
     symbols = [
         {"name": "上证指数", "code": "000001.SS"},
         {"name": "纳斯达克", "code": "^IXIC"},
@@ -78,16 +77,15 @@ def get_finance():
     for item in symbols:
         try:
             ticker = yf.Ticker(item["code"])
-            # 获取今日行情 (fast approach)
             hist = ticker.history(period="2d")
             if len(hist) >= 1:
                 price = hist['Close'].iloc[-1]
-                # 计算简单的涨跌 (如果有2天数据)
                 if len(hist) >= 2:
                     prev_close = hist['Close'].iloc[0]
                     change = (price - prev_close) / prev_close * 100
                     change_str = f"{change:+.2f}%"
-                    color = "#d63031" if change > 0 else "#00b894" # 红色涨，绿色跌
+                    # 红色涨，绿色跌
+                    color = "#d63031" if change > 0 else "#00b894"
                 else:
                     change_str = "-"
                     color = "black"
@@ -102,11 +100,13 @@ def get_finance():
             print(f"Finance Error {item['name']}: {e}")
     return data
 
-# --- 4. [新增] 获取 Hacker News (全球极客) ---
+# -----------------------------------------------------------------------------
+# 4. Hacker News (Global Tech)
+# -----------------------------------------------------------------------------
 def get_hacker_news():
     news_list = []
     try:
-        # 获取 Top Stories ID
+        # 增加超时设置，防止卡住
         ids = requests.get("https://hacker-news.firebaseio.com/v0/topstories.json", timeout=10).json()[:8]
         for item_id in ids:
             item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json", timeout=5).json()
@@ -124,7 +124,9 @@ def get_hacker_news():
         news_list.append({"title": "Hacker News 抓取失败", "link": "#", "score": ""})
     return news_list
 
-# --- 5. [新增] 获取 V2EX 热门 (国内极客) ---
+# -----------------------------------------------------------------------------
+# 5. V2EX Hot (China Tech)
+# -----------------------------------------------------------------------------
 def get_v2ex_hot():
     topics = []
     try:
@@ -143,25 +145,109 @@ def get_v2ex_hot():
         topics.append({"title": "V2EX 抓取失败", "link": "#", "replies": ""})
     return topics
 
-# --- 6. 生成网页 ---
-def generate_html(news, projects, finance, hacker_news, v2ex_data):
+# -----------------------------------------------------------------------------
+# 6. [NEW] 微博热搜 (Weibo Hot)
+# -----------------------------------------------------------------------------
+def get_weibo_hot():
+    hot_list = []
+    print("Fetching Weibo Hot...")
+    try:
+        # 微博官方 Ajax 接口
+        url = "https://weibo.com/ajax/side/hotSearch"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        resp = requests.get(url, headers=headers, timeout=10).json()
+        
+        # 解析数据
+        items = resp.get('data', {}).get('realtime', [])
+        for item in items[:10]: # 取前10条
+            # 过滤掉置顶广告（通常没有 rank 或者 key 比较特殊，这里简单判断 note 存在即可）
+            title = item.get('note')
+            if not title: continue # 跳过没有标题的
+            
+            # 构造搜索链接
+            search_query = item.get('word', '')
+            link = f"https://s.weibo.com/weibo?q={search_query}&Refer=top"
+            
+            # 热度 (num)
+            heat = item.get('num', 0)
+            if heat > 10000:
+                heat_str = f"🔥{heat/10000:.1f}w"
+            else:
+                heat_str = f"🔥{heat}"
+                
+            hot_list.append({
+                "title": title,
+                "link": link,
+                "heat": heat_str
+            })
+    except Exception as e:
+        print(f"Weibo Error: {e}")
+        hot_list.append({"title": "微博热搜抓取失败", "link": "#", "heat": ""})
+    return hot_list
+
+# -----------------------------------------------------------------------------
+# 7. [NEW] 知乎热榜 (Zhihu Hot)
+# -----------------------------------------------------------------------------
+def get_zhihu_hot():
+    hot_list = []
+    print("Fetching Zhihu Hot...")
+    try:
+        # 知乎 API V3
+        url = "https://www.zhihu.com/api/v3/feed/topstory/hot-lists/total_heat"
+        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        resp = requests.get(url, headers=headers, timeout=10).json()
+        
+        data = resp.get('data', [])
+        for item in data[:8]:
+            target = item.get('target', {})
+            title = target.get('title_area', {}).get('text', '') or target.get('title', '')
+            link = target.get('link', {}).get('url', '') or f"https://www.zhihu.com/question/{target.get('id')}"
+            
+            # 热度文本
+            heat_text = item.get('detail_text', '')
+            
+            hot_list.append({
+                "title": title,
+                "link": link,
+                "heat": heat_text
+            })
+    except Exception as e:
+        print(f"Zhihu Error: {e}")
+        hot_list.append({"title": "知乎热榜抓取失败", "link": "#", "heat": ""})
+    return hot_list
+
+
+# -----------------------------------------------------------------------------
+# 生成 HTML
+# -----------------------------------------------------------------------------
+def generate_html(news, projects, finance, hacker_news, v2ex_data, weibo_data, zhihu_data):
     utc_now = datetime.datetime.utcnow()
     beijing_time = utc_now + datetime.timedelta(hours=8)
     date_str = beijing_time.strftime("%Y-%m-%d %H:%M")
 
-    # 构建 HTML 片段
+    # 1. 36Kr HTML
     news_html = "".join([f'<li><span class="date">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in news])
     
+    # 2. Hacker News HTML
     hn_html = "".join([f'<li><span class="date" style="color:#ff6600; font-weight:bold;">{n["score"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hacker_news])
     
+    # 3. V2EX HTML
     v2ex_html = "".join([f'<li><span class="date">{n["replies"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in v2ex_data])
 
+    # 4. [NEW] Weibo HTML (CSS 使用 distinct style)
+    weibo_html = "".join([f'<li><span class="date" style="color:#e6162d;">{n["heat"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in weibo_data])
+
+    # 5. [NEW] Zhihu HTML
+    zhihu_html = "".join([f'<li><span class="date" style="color:#0084ff;">{n["heat"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in zhihu_data])
+
+    # 6. GitHub HTML
     projects_html = "".join([f'''
         <div class="project-item">
             <div class="p-title"><a href="{p["link"]}" target="_blank">{p["title"]}</a> <span class="stars">⭐{p["stars"]}</span></div>
             <div class="p-desc">{p["desc"]}</div>
         </div>''' for p in projects])
         
+    # 7. Finance HTML
     finance_html = "".join([f'''
         <div class="finance-item">
             <div class="f-name">{f["name"]}</div>
@@ -179,21 +265,26 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
         <style>
             :root {{ --bg: #f4f6f8; --card-bg: #ffffff; --text: #333; --accent: #007bff; }}
             body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }}
-            .container {{ max-width: 1200px; margin: 0 auto; }}
+            .container {{ max-width: 1400px; margin: 0 auto; }} /* 宽度加大 */
             header {{ text-align: center; margin-bottom: 30px; }}
             h1 {{ margin: 0; font-size: 2em; color: #2c3e50; }}
             .time {{ color: #7f8c8d; font-size: 0.9em; margin-top: 5px; }}
             
+            /* Responsive Grid */
             .dashboard {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }}
             
-            .card {{ background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
-            .card h2 {{ margin-top: 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 1.2em; color: #007bff; }}
+            .card {{ background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }}
+            .card:hover {{ transform: translateY(-3px); box-shadow: 0 8px 12px rgba(0,0,0,0.1); }}
+            .card h2 {{ margin-top: 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 1.2em; color: #007bff; display: flex; align-items: center; justify-content: space-between;}}
             
             ul.news-list {{ list-style: none; padding: 0; }}
-            ul.news-list li {{ padding: 10px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; }}
+            ul.news-list li {{ padding: 8px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; font-size: 0.95em; }}
             ul.news-list li:last-child {{ border-bottom: none; }}
-            .date {{ font-size: 0.85em; color: #999; margin-right: 10px; min-width: 55px; text-align:right; }}
-            a {{ text-decoration: none; color: #333; transition: color 0.2s; }}
+            
+            /* 日期/热度标签样式 */
+            .date {{ font-size: 0.85em; color: #999; margin-right: 10px; min-width: 65px; text-align: right; flex-shrink: 0; }}
+            
+            a {{ text-decoration: none; color: #333; transition: color 0.2s; line-height: 1.4; }}
             a:hover {{ color: var(--accent); }}
             
             .project-item {{ margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f9f9f9; }}
@@ -219,33 +310,47 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
             
             <div class="dashboard">
                 <div class="card">
-                    <h2>📰 36Kr 科技要闻</h2>
+                    <h2>📰 36Kr 科技</h2>
                     <ul class="news-list">
                         {news_html}
                     </ul>
                 </div>
+
+                <div class="card" style="border-top: 4px solid #e6162d;">
+                    <h2 style="color: #e6162d;">🔥 微博热搜</h2>
+                    <ul class="news-list">
+                        {weibo_html}
+                    </ul>
+                </div>
+                
+                <div class="card" style="border-top: 4px solid #0084ff;">
+                    <h2 style="color: #0084ff;">📘 知乎热榜</h2>
+                    <ul class="news-list">
+                        {zhihu_html}
+                    </ul>
+                </div>
                 
                 <div class="card">
-                    <h2>🔥 Hacker News 热点</h2>
+                    <h2>🍊 Hacker News</h2>
                     <ul class="news-list">
                         {hn_html}
                     </ul>
                 </div>
 
                 <div class="card">
-                    <h2>⚡ V2EX 极客讨论</h2>
+                    <h2>⚡ V2EX 极客</h2>
                     <ul class="news-list">
                         {v2ex_html}
                     </ul>
                 </div>
                 
                 <div class="card">
-                    <h2>🐍 GitHub Python 热榜</h2>
+                    <h2>🐍 GitHub Trending</h2>
                     {projects_html}
                 </div>
                 
                 <div class="card">
-                    <h2>💰 市场风向标</h2>
+                    <h2>💰 市场指数</h2>
                     <div class="finance-grid">
                         {finance_html}
                     </div>
@@ -259,11 +364,20 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
 
+# -----------------------------------------------------------------------------
+# Main Execution
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     print("Starting job...")
     
-    print("Fetching News...")
+    print("Fetching News (36Kr)...")
     news_data = get_news()
+    
+    print("Fetching Weibo Hot...")
+    weibo_data = get_weibo_hot()
+
+    print("Fetching Zhihu Hot...")
+    zhihu_data = get_zhihu_hot()
     
     print("Fetching Hacker News...")
     hn_data = get_hacker_news()
@@ -278,7 +392,6 @@ if __name__ == "__main__":
     finance_data = get_finance()
     
     print("Generating HTML...")
-    # 注意参数顺序：科技新闻, GitHub, 金融, HN, V2EX
-    generate_html(news_data, github_data, finance_data, hn_data, v2ex_data)
+    generate_html(news_data, github_data, finance_data, hn_data, v2ex_data, weibo_data, zhihu_data)
     
     print("Done! index.html updated.")
