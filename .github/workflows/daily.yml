@@ -1,0 +1,36 @@
+name: Daily Update
+
+on:
+  # 1. 每天北京时间早上 7:00 运行 (UTC 23:00)
+  schedule:
+    - cron: '0 23 * * *'
+  # 2. 允许你手动点击按钮立刻运行 (方便测试)
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code (下载代码)
+        uses: actions/checkout@v3
+
+      - name: Set up Python (安装 Python)
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies (安装依赖)
+        run: pip install requests
+
+      - name: Run script (运行脚本)
+        run: python main.py
+
+      - name: Commit and Push (提交更改)
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          #以此检查是否有新文件生成
+          git add index.html
+          # 如果没有变化，就不提交，防止报错
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update daily news" && git push)
