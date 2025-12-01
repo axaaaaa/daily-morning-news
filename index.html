@@ -8,21 +8,26 @@
         <style>
             :root { --bg: #f4f6f8; --card-bg: #ffffff; --text: #333; --accent: #007bff; }
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-            .container { max-width: 1200px; margin: 0 auto; }
+            .container { max-width: 1400px; margin: 0 auto; } /* 宽度加大 */
             header { text-align: center; margin-bottom: 30px; }
             h1 { margin: 0; font-size: 2em; color: #2c3e50; }
             .time { color: #7f8c8d; font-size: 0.9em; margin-top: 5px; }
             
+            /* Responsive Grid */
             .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
             
-            .card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-            .card h2 { margin-top: 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 1.2em; color: #007bff; }
+            .card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }
+            .card:hover { transform: translateY(-3px); box-shadow: 0 8px 12px rgba(0,0,0,0.1); }
+            .card h2 { margin-top: 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 1.2em; color: #007bff; display: flex; align-items: center; justify-content: space-between;}
             
             ul.news-list { list-style: none; padding: 0; }
-            ul.news-list li { padding: 10px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; }
+            ul.news-list li { padding: 8px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; font-size: 0.95em; }
             ul.news-list li:last-child { border-bottom: none; }
-            .date { font-size: 0.85em; color: #999; margin-right: 10px; min-width: 55px; text-align:right; }
-            a { text-decoration: none; color: #333; transition: color 0.2s; }
+            
+            /* 日期/热度标签样式 */
+            .date { font-size: 0.85em; color: #999; margin-right: 10px; min-width: 65px; text-align: right; flex-shrink: 0; }
+            
+            a { text-decoration: none; color: #333; transition: color 0.2s; line-height: 1.4; }
             a:hover { color: var(--accent); }
             
             .project-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f9f9f9; }
@@ -43,33 +48,47 @@
         <div class="container">
             <header>
                 <h1>🚀 Daily Dashboard</h1>
-                <p class="time">更新于: 2025-12-02 01:28 (Beijing Time)</p>
+                <p class="time">更新于: 2025-12-02 01:38 (Beijing Time)</p>
             </header>
             
             <div class="dashboard">
                 <div class="card">
-                    <h2>📰 36Kr 科技要闻</h2>
+                    <h2>📰 36Kr 科技</h2>
                     <ul class="news-list">
                         <li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576847593601927?f=rss" target="_blank">氪星晚报｜亚马逊和谷歌联手打通高速云链路；我国快递年业务量首次突破1800亿件；中国长安汽车集团入股辰致汽车集团，后者多位高管发生变更</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576891967929474?f=rss" target="_blank">WISE2025 年度企业发布丨在风浪中，造新船</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576833023474825?f=rss" target="_blank">硬核突围-中国硬件的全球时刻与未来想象 | 36氪 WISE2025 商业之王大会</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576864061324168?f=rss" target="_blank">寻找“ChatGPT时刻”：谁能定义具身智能？| 36氪 WISE2025 商业之王大会</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576857453493120?f=rss" target="_blank">斩获“2025年度焦点产品”大奖，慕思T11+让好睡眠有迹可循</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576658611813510?f=rss" target="_blank">由屎山代码组成的游戏，讲遍了中国小镇里的青少年 | 玩点好的</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576380327230597?f=rss" target="_blank">飞书深诺集团创始人兼CEO沈晨岗：营销+AI双轮驱动，中国企业全球征程加速度｜WISE2025 商业之王</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576452014767237?f=rss" target="_blank">36氪CEO冯大刚开场致辞：风景这边独好 | WISE2025 商业之王大会</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576400262839173?f=rss" target="_blank">七年终结日韩绝对垄断，高端电子浆料“小巨人”夺回中国企业话语权 | 硬氪专访</a></li><li><span class="date">2025-12-01</span><a href="https://36kr.com/p/3576415041387652?f=rss" target="_blank">数字王国中国区副总经理陈晓光：科技驱动创意，「AI+」正重塑创作格局｜WISE2025 商业之王</a></li>
                     </ul>
                 </div>
+
+                <div class="card" style="border-top: 4px solid #e6162d;">
+                    <h2 style="color: #e6162d;">🔥 微博热搜</h2>
+                    <ul class="news-list">
+                        
+                    </ul>
+                </div>
+                
+                <div class="card" style="border-top: 4px solid #0084ff;">
+                    <h2 style="color: #0084ff;">📘 知乎热榜</h2>
+                    <ul class="news-list">
+                        
+                    </ul>
+                </div>
                 
                 <div class="card">
-                    <h2>🔥 Hacker News 热点</h2>
+                    <h2>🍊 Hacker News</h2>
                     <ul class="news-list">
-                        <li><span class="date" style="color:#ff6600; font-weight:bold;">🔥76</span><a href="https://tonisagrista.com/blog/2025/google-unkills-jpegxl/" target="_blank">Google *Unkills* JPEG XL?</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥303</span><a href="https://xania.org/202512/01-xor-eax-eax" target="_blank">Why xor eax, eax?</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥66</span><a href="https://news.ycombinator.com/item?id=46108941" target="_blank">Ask HN: Who is hiring? (December 2025)</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥53</span><a href="https://taranis.ie/llms-are-a-failure-a-new-ai-winter-is-coming/" target="_blank">A New AI Winter Is Coming</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥124</span><a href="https://eyeondesign.aiga.org/for-decades-cartographers-have-been-hiding-covert-illustrations-inside-of-switzerlands-official-maps/" target="_blank">Cartographers Have Been Hiding Covert Illustrations Inside of Switzerland's Maps</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥42</span><a href="https://stratechery.com/2025/google-nvidia-and-openai/" target="_blank">Google, Nvidia, and OpenAI – Stratechery by Ben Thompson</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥1</span><a href="https://www.ycombinator.com/companies/better-auth/jobs/eKk5nLt-developer-relation-engineer" target="_blank">Better Auth (YC X25) Is Hiring</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥705</span><a href="https://tegabrain.com/Slop-Evader" target="_blank">Search tool that only returns content created before ChatGPT's public release</a></li>
+                        <li><span class="date" style="color:#ff6600; font-weight:bold;">🔥88</span><a href="https://tonisagrista.com/blog/2025/google-unkills-jpegxl/" target="_blank">Google *Unkills* JPEG XL?</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥306</span><a href="https://xania.org/202512/01-xor-eax-eax" target="_blank">Why xor eax, eax?</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥72</span><a href="https://news.ycombinator.com/item?id=46108941" target="_blank">Ask HN: Who is hiring? (December 2025)</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥129</span><a href="https://eyeondesign.aiga.org/for-decades-cartographers-have-been-hiding-covert-illustrations-inside-of-switzerlands-official-maps/" target="_blank">Cartographers Have Been Hiding Covert Illustrations Inside of Switzerland's Maps</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥45</span><a href="https://stratechery.com/2025/google-nvidia-and-openai/" target="_blank">Google, Nvidia, and OpenAI – Stratechery by Ben Thompson</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥708</span><a href="https://tegabrain.com/Slop-Evader" target="_blank">Search tool that only returns content created before ChatGPT's public release</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥1</span><a href="https://www.ycombinator.com/companies/better-auth/jobs/eKk5nLt-developer-relation-engineer" target="_blank">Better Auth (YC X25) Is Hiring</a></li><li><span class="date" style="color:#ff6600; font-weight:bold;">🔥73</span><a href="https://justanotherelectronicsblog.com/?p=1429" target="_blank">A vector graphics workstation from the 70s</a></li>
                     </ul>
                 </div>
 
                 <div class="card">
-                    <h2>⚡ V2EX 极客讨论</h2>
+                    <h2>⚡ V2EX 极客</h2>
                     <ul class="news-list">
-                        <li><span class="date">💬180</span><a href="https://www.v2ex.com/t/1176055" target="_blank">一个杭漂普通前端程序员 4 年半才攒够了 30w 有感</a></li><li><span class="date">💬138</span><a href="https://www.v2ex.com/t/1176137" target="_blank">关于 10 年 iPhone 用户换到华为 mate80 的感受</a></li><li><span class="date">💬121</span><a href="https://www.v2ex.com/t/1176085" target="_blank">大家开车都是超速行驶吗？</a></li><li><span class="date">💬110</span><a href="https://www.v2ex.com/t/1176022" target="_blank">同学借贷不还，紧急联系人留的我的名字和电话，我该怎么办？</a></li><li><span class="date">💬105</span><a href="https://www.v2ex.com/t/1176019" target="_blank">券商低佣开户万 0.854 免 5， 评论抽奖送整箱清风抽纸 [24 包]</a></li><li><span class="date">💬100</span><a href="https://www.v2ex.com/t/1176026" target="_blank">AnxReader 上架 GooglePlay 封闭测试邀请---开源，多平台电子书阅读器，送永久高级版兑换码🎁</a></li><li><span class="date">💬96</span><a href="https://www.v2ex.com/t/1176106" target="_blank">两辆 BBA 车主，试驾《遥遥领先》有感：我都想把我的车推下海</a></li><li><span class="date">💬89</span><a href="https://www.v2ex.com/t/1176020" target="_blank">交房必须交物业费？此局怎破？</a></li>
+                        <li><span class="date">💬180</span><a href="https://www.v2ex.com/t/1176055" target="_blank">一个杭漂普通前端程序员 4 年半才攒够了 30w 有感</a></li><li><span class="date">💬138</span><a href="https://www.v2ex.com/t/1176137" target="_blank">关于 10 年 iPhone 用户换到华为 mate80 的感受</a></li><li><span class="date">💬122</span><a href="https://www.v2ex.com/t/1176085" target="_blank">大家开车都是超速行驶吗？</a></li><li><span class="date">💬110</span><a href="https://www.v2ex.com/t/1176022" target="_blank">同学借贷不还，紧急联系人留的我的名字和电话，我该怎么办？</a></li><li><span class="date">💬105</span><a href="https://www.v2ex.com/t/1176019" target="_blank">券商低佣开户万 0.854 免 5， 评论抽奖送整箱清风抽纸 [24 包]</a></li><li><span class="date">💬100</span><a href="https://www.v2ex.com/t/1176026" target="_blank">AnxReader 上架 GooglePlay 封闭测试邀请---开源，多平台电子书阅读器，送永久高级版兑换码🎁</a></li><li><span class="date">💬97</span><a href="https://www.v2ex.com/t/1176106" target="_blank">两辆 BBA 车主，试驾《遥遥领先》有感：我都想把我的车推下海</a></li><li><span class="date">💬89</span><a href="https://www.v2ex.com/t/1176020" target="_blank">交房必须交物业费？此局怎破？</a></li>
                     </ul>
                 </div>
                 
                 <div class="card">
-                    <h2>🐍 GitHub Python 热榜</h2>
+                    <h2>🐍 GitHub Trending</h2>
                     
         <div class="project-item">
             <div class="p-title"><a href="https://github.com/sansan0/TrendRadar" target="_blank">sansan0/TrendRadar</a> <span class="stars">⭐1,145</span></div>
@@ -106,7 +125,7 @@
                 </div>
                 
                 <div class="card">
-                    <h2>💰 市场风向标</h2>
+                    <h2>💰 市场指数</h2>
                     <div class="finance-grid">
                         
         <div class="finance-item">
@@ -116,18 +135,18 @@
         </div>
         <div class="finance-item">
             <div class="f-name">纳斯达克</div>
-            <div class="f-price">23324.92</div>
-            <div class="f-change" style="color:#00b894">-0.17%</div>
+            <div class="f-price">23335.53</div>
+            <div class="f-change" style="color:#00b894">-0.13%</div>
         </div>
         <div class="finance-item">
             <div class="f-name">比特币</div>
-            <div class="f-price">84881.31</div>
-            <div class="f-change" style="color:#00b894">-6.10%</div>
+            <div class="f-price">84699.39</div>
+            <div class="f-change" style="color:#00b894">-6.30%</div>
         </div>
         <div class="finance-item">
             <div class="f-name">英伟达</div>
-            <div class="f-price">179.74</div>
-            <div class="f-change" style="color:#d63031">+1.55%</div>
+            <div class="f-price">179.93</div>
+            <div class="f-change" style="color:#d63031">+1.66%</div>
         </div>
                     </div>
                 </div>
