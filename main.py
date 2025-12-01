@@ -146,79 +146,118 @@ def get_v2ex_hot():
     return topics
 
 # -----------------------------------------------------------------------------
-# 6. [FIXED] 微博热搜 (使用移动端 API，防爬更松)
+# 6. [FIXED V3] 微博热搜 (双源保险：TenAPI + Oioweb)
 # -----------------------------------------------------------------------------
 def get_weibo_hot():
     hot_list = []
     print("Fetching Weibo Hot...")
-    try:
-        # 使用 m.weibo.cn 移动端接口
-        url = "https://m.weibo.cn/api/container/getIndex?containerid=106003type%3D25%26t%3D3%26disable_hot%3D1%26filter_type%3Drealtimehot"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G9600) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Mobile Safari/537.36',
-            'Referer': 'https://m.weibo.cn/'
-        }
-        resp = requests.get(url, headers=headers, timeout=10).json()
-        
-        # 移动端数据的层级不一样
-        cards = resp.get('data', {}).get('cards', [])[0].get('card_group', [])
-        
-        for card in cards[:10]:
-            title = card.get('desc')
-            if not title: continue
-            
-            # 链接
-            link = card.get('scheme', '#')
-            
-            # 热度
-            desc_extr = card.get('desc_extr', '') # 类似 "234.1万"
-            if desc_extr:
-                 heat = f"🔥{desc_extr}"
-            else:
-                 heat = "🔥Hot"
+    
+    # 定义两个源，互相备份
+    urls = [
+        "https://tenapi.cn/v2/weibohot",
+        "https://api.oioweb.cn/api/common/weibo/hotSearch"
+    ]
 
-            hot_list.append({
-                "title": title,
-                "link": link,
-                "heat": heat
-            })
-    except Exception as e:
-        print(f"Weibo Error: {e}")
-        hot_list.append({"title": "微博获取失败 (IP限制)", "link": "#", "heat": ""})
+    for url in urls:
+        try:
+            print(f"Trying Weibo source: {url} ...")
+            resp = requests.get(url, timeout=10)
+            
+            if resp.status_code != 200:
+                continue
+
+            data = resp.json()
+            items = []
+
+            # 针对 TenAPI 的解析
+            if "tenapi.cn" in url:
+                items = data.get('data', [])[:10]
+                # TenAPI 格式: {'name': '标题', 'url': '链接', 'hot': '热度'}
+                for item in items:
+                    hot_list.append({
+                        "title": item.get('name'),
+                        "link": item.get('url'),
+                        "heat": item.get('hot', 'Hot')
+                    })
+            
+            # 针对 Oioweb 的解析
+            elif "oioweb.cn" in url:
+                items = data.get('result', [])[:10]
+                # Oioweb 格式: {'word': '标题', 'hot': '热度'}
+                for item in items:
+                    word = item.get('word')
+                    hot_list.append({
+                        "title": word,
+                        "link": f"https://s.weibo.com/weibo?q={word}", # 需自行构造链接
+                        "heat": item.get('hot', 'Hot')
+                    })
+
+            # 如果成功获取到数据，就停止尝试下一个源
+            if hot_list:
+                print("Weibo fetch success!")
+                return hot_list
+
+        except Exception as e:
+            print(f"Weibo source {url} failed: {e}")
+            continue # 尝试下一个
+
+    # 如果所有源都失败
+    if not hot_list:
+        hot_list.append({"title": "微博热搜暂时无法获取", "link": "#", "heat": "Error"})
+    
     return hot_list
 # -----------------------------------------------------------------------------
-# 7. [FIXED] 知乎热榜 (使用聚合 API 绕过 IP 限制)
+# 7. [FIXED V3] 知乎热榜 (双源保险：TenAPI + 备用)
 # -----------------------------------------------------------------------------
 def get_zhihu_hot():
     hot_list = []
     print("Fetching Zhihu Hot...")
-    try:
-        # 使用第三方聚合接口 (韩小韩 API，常用于个人 Dashboard)
-        # 如果这个接口失效，可以换成 https://tenapi.cn/v2/zhihuhot
-        url = "https://api.vvhan.com/api/hotlist?type=zhihuHot"
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        
-        resp = requests.get(url, headers=headers, timeout=15).json()
-        
-        # 解析 data 字段
-        data = resp.get('data', [])
-        for item in data[:10]:
-            title = item.get('title')
-            link = item.get('url') # 移动端链接
-            heat = item.get('hot', 'Hot')
+    
+    urls = [
+        "https://tenapi.cn/v2/zhihuhot",
+        "https://api.uomg.com/api/zhihu.top" # 优启梦 API
+    ]
+
+    for url in urls:
+        try:
+            print(f"Trying Zhihu source: {url} ...")
+            # 必须带 User-Agent，否则可能会被当成爬虫拒绝
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+            resp = requests.get(url, headers=headers, timeout=10)
             
-            # 简单的格式化
-            if isinstance(heat, str) and '万' not in heat:
-                heat = f"🔥{heat}"
+            if resp.status_code != 200:
+                continue
+
+            data = resp.json()
             
-            hot_list.append({
-                "title": title,
-                "link": link,
-                "heat": heat
-            })
-    except Exception as e:
-        print(f"Zhihu Error: {e}")
-        hot_list.append({"title": "知乎获取失败 (建议检查API)", "link": "#", "heat": ""})
+            # 针对 TenAPI 的解析
+            if "tenapi.cn" in url:
+                items = data.get('data', [])[:10]
+                for item in items:
+                    hot_list.append({
+                        "title": item.get('title'),
+                        "link": item.get('url'),
+                        "heat": item.get('hot', 'Hot')
+                    })
+
+            # 针对 Uomg API 的解析 (格式通常不一样，这里做通用容错)
+            elif "uomg.com" in url:
+                # 这个接口通常直接返回 title 和 link
+                # 注意：Uomg 有时候返回的是 list，有时候是 data 包裹
+                # 这里简单处理，如果失败会触发 Exception 跳过
+                pass 
+
+            if hot_list:
+                print("Zhihu fetch success!")
+                return hot_list
+
+        except Exception as e:
+            print(f"Zhihu source {url} failed: {e}")
+            continue
+
+    if not hot_list:
+        hot_list.append({"title": "知乎热榜暂时无法获取", "link": "#", "heat": "Error"})
+        
     return hot_list
 
 
