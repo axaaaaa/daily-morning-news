@@ -21,7 +21,7 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies (安装依赖)
-        run: pip install requests
+        run: pip install requests beautifulsoup4 feedparser yfinance
 
       - name: Run script (运行脚本)
         run: python main.py
