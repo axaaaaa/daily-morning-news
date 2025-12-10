@@ -6,96 +6,87 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Geek Dashboard</title>
         <style>
-            :root { --bg: #f0f2f5; --card-bg: #ffffff; --text: #2c3e50; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 13px; }
-            .container { max-width: 1200px; margin: 0 auto; }
+            :root { --bg: #f4f7f6; --card: #ffffff; --text: #2c3e50; --link: #34495e; --hover: #3498db; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 13px; }
             
-            header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-            h1 { margin: 0; font-size: 1.4em; color: #34495e; font-weight: 800; letter-spacing: -0.5px; }
-            .time { color: #95a5a6; font-family: monospace; font-size: 0.9em; }
+            .container { max-width: 1100px; margin: 0 auto; }
             
-            .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
+            header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; }
+            h1 { margin: 0; font-size: 1.5em; color: #2c3e50; letter-spacing: -0.5px; }
+            .time { color: #7f8c8d; font-family: monospace; }
             
-            .card { background: var(--card-bg); border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e1e4e8; }
-            .card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.08); transform: translateY(-1px); transition: all 0.2s; }
+            /* 紧凑网格布局 */
+            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
             
-            .card h2 { margin-top: 0; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; display: flex; align-items: center; border-bottom: 2px solid transparent; }
+            .card { background: var(--card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eaeaea; }
+            .card h2 { margin: 0 0 12px 0; font-size: 1.1em; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; display: flex; align-items: center; justify-content: space-between; color: #2c3e50; }
             
-            /* 各板块颜色定义 */
-            .readhub h2 { color: #007bff; border-color: #007bff; }
-            .security h2 { color: #e74c3c; border-color: #e74c3c; }
-            .ai h2 { color: #f39c12; border-color: #f39c12; }
-            .github h2 { color: #24292e; border-color: #24292e; }
-            .finance h2 { color: #27ae60; border-color: #27ae60; }
+            /* 强调色条 */
+            .readhub h2 { border-color: #3498db; }
+            .security h2 { border-color: #2ecc71; }
+            .hn h2 { border-color: #f39c12; }
+            .cve h2 { border-color: #e74c3c; }
+            .finance h2 { border-color: #9b59b6; }
 
-            ul { list-style: none; padding: 0; margin: 0; }
-            ul li { padding: 6px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; }
-            ul li:last-child { border-bottom: none; }
+            ul { padding: 0; margin: 0; list-style: none; }
+            li { padding: 6px 0; border-bottom: 1px dashed #f0f0f0; display: flex; align-items: baseline; }
+            li:last-child { border-bottom: none; }
             
-            .date { font-family: monospace; color: #999; margin-right: 8px; min-width: 40px; text-align: right; flex-shrink: 0; font-size: 0.9em; }
-            a { text-decoration: none; color: #333; transition: color 0.2s; }
-            a:hover { color: #0056b3; }
+            .date { color: #bdc3c7; margin-right: 10px; min-width: 45px; text-align: right; font-family: monospace; flex-shrink: 0; }
             
-            /* 项目列表样式 */
-            .project-item { padding: 8px 0; border-bottom: 1px solid #f1f1f1; }
-            .p-title { font-weight: 600; font-size: 1em; display: flex; justify-content: space-between; }
-            .p-desc { font-size: 0.85em; color: #666; margin-top: 3px; line-height: 1.3; }
-            .stars { font-size: 0.8em; background: #fafbfc; border: 1px solid #e1e4e8; padding: 0 5px; border-radius: 4px; }
+            a { text-decoration: none; color: var(--link); transition: color 0.2s; }
+            a:hover { color: var(--hover); }
             
-            /* 金融样式 */
-            .finance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-            .finance-item { text-align: center; background: #f8f9fa; padding: 8px; border-radius: 6px; }
-            .f-name { font-size: 0.8em; color: #7f8c8d; }
-            .f-price { font-weight: bold; margin: 2px 0; font-family: monospace; font-size: 1.1em; }
+            /* CVE 特殊样式 */
+            .cve-item { margin-bottom: 8px; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px; }
+            .cve-id { color: #e74c3c; font-weight: bold; font-family: monospace; font-size: 1.05em; }
+            .cve-desc { margin: 2px 0 0 0; color: #7f8c8d; line-height: 1.4; font-size: 0.9em; }
             
-            /* 安全板块特殊布局 */
-            .split-section { display: flex; flex-direction: column; gap: 15px; }
-            .sub-header { font-size: 0.85em; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px; display: block; }
+            /* 金融横条样式 */
+            .finance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+            .f-item { text-align: center; background: #fafafa; padding: 8px; border-radius: 6px; }
+            .f-name { font-size: 0.8em; color: #95a5a6; }
+            .f-price { font-weight: bold; font-size: 1.1em; margin: 2px 0; font-family: monospace; }
+            .f-change { font-size: 0.85em; font-weight: bold; }
 
-            @media (max-width: 768px) { .dashboard { grid-template-columns: 1fr; } }
+            @media (max-width: 700px) { 
+                .grid { grid-template-columns: 1fr; } 
+                .finance-grid { grid-template-columns: repeat(2, 1fr); }
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <header>
                 <h1>🚀 Geek Dashboard</h1>
-                <span class="time">2025-12-10 19:26</span>
+                <div class="time">2025-12-10 11:34</div>
             </header>
             
-            <div class="dashboard">
+            <div class="grid">
                 <div class="card readhub">
                     <h2>📰 ReadHub Tech</h2>
-                    <ul></ul>
+                    <ul><li><span class="date">Err</span><a href="#" target="_blank">ReadHub 接口返回错误</a></li></ul>
                 </div>
 
                 <div class="card security">
-                    <h2>🛡️ Security Intel</h2>
-                    <div class="split-section">
-                        <div>
-                            <span class="sub-header">Solidot / News</span>
-                            <ul><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83009" target="_blank">Microsoft Excel 诞生 40 年</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83008" target="_blank">癌症率激增引发癌症过早发现的争论</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83007" target="_blank">加密货币帮助犯罪分子洗钱和逃避制裁</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83006" target="_blank">RMS 谈 ChatGPT</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83005" target="_blank">欧盟对 Google AI 展开反垄断调查</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83004" target="_blank">睡眠不足与预期寿命减少相关</a></li></ul>
-                        </div>
-                        <div>
-                            <span class="sub-header" style="color:#e74c3c;">Latest CVE Alerts</span>
-                            <ul><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li></ul>
-                        </div>
-                    </div>
+                    <h2>🛡️ FreeBuf Security</h2>
+                    <ul><li><span class="date" style="color:#27ae60;">12-09</span><a href="https://www.solidot.org/story?sid=83009" target="_blank">Microsoft Excel 诞生 40 年</a></li><li><span class="date" style="color:#27ae60;">12-09</span><a href="https://www.solidot.org/story?sid=83008" target="_blank">癌症率激增引发癌症过早发现的争论</a></li><li><span class="date" style="color:#27ae60;">12-09</span><a href="https://www.solidot.org/story?sid=83007" target="_blank">加密货币帮助犯罪分子洗钱和逃避制裁</a></li><li><span class="date" style="color:#27ae60;">12-09</span><a href="https://www.solidot.org/story?sid=83006" target="_blank">RMS 谈 ChatGPT</a></li><li><span class="date" style="color:#27ae60;">12-09</span><a href="https://www.solidot.org/story?sid=83005" target="_blank">欧盟对 Google AI 展开反垄断调查</a></li><li><span class="date" style="color:#27ae60;">12-09</span><a href="https://www.solidot.org/story?sid=83004" target="_blank">睡眠不足与预期寿命减少相关</a></li><li><span class="date" style="color:#27ae60;">12-09</span><a href="https://www.solidot.org/story?sid=83003" target="_blank">Google 计划明年推出集成 Gemini 的 AI 眼镜</a></li><li><span class="date" style="color:#27ae60;">12-09</span><a href="https://www.solidot.org/story?sid=83002" target="_blank">联想准备推出水平扩展屏幕的卷曲游戏本</a></li></ul>
                 </div>
 
-                <div class="card ai">
-                    <h2>🤖 Hugging Face Trending</h2>
-                    <ul><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B" target="_blank">microsoft/VibeVoice-Realtime-0.5B</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/Tongyi-MAI/Z-Image-Turbo" target="_blank">Tongyi-MAI/Z-Image-Turbo</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/zai-org/GLM-4.6V-Flash" target="_blank">zai-org/GLM-4.6V-Flash</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/zai-org/GLM-4.6V" target="_blank">zai-org/GLM-4.6V</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2" target="_blank">deepseek-ai/DeepSeek-V3.2</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512" target="_blank">mistralai/Devstral-Small-2-24B-Instruct-2512</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/EssentialAI/rnj-1-instruct" target="_blank">EssentialAI/rnj-1-instruct</a></li></ul>
+                <div class="card hn">
+                    <h2>🍊 Hacker News</h2>
+                    <ul><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥2704</span><a href="https://dosaygo-studio.github.io/hn-front-page-2035/news" target="_blank">Show HN: Gemini Pro 3 hallucinates the HN front page 10 years from now</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥576</span><a href="https://lwn.net/Articles/1049831/" target="_blank">Rust in the kernel is no longer experimental</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥93</span><a href="https://eli.thegreenplace.net/2025/revisiting-lets-build-a-compiler/" target="_blank">Revisiting "Let's Build a Compiler"</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥553</span><a href="https://www.digitalpublicgoods.net/r/peertube" target="_blank">PeerTube is recognized as a digital public good by Digital Public Goods Alliance</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥42</span><a href="https://eamonnsullivan.co.uk/posts-output/email-setup/2025-12-3-putting-email-in-its-place/" target="_blank">Putting email in its place with Emacs and Mu4e</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥157</span><a href="https://blog.mozilla.org/en/mozilla/av1-video-codec-wins-emmy/" target="_blank">When a video codec wins an Emmy</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥619</span><a href="https://mistral.ai/news/devstral-2-vibe-cli" target="_blank">Mistral releases Devstral2 and Mistral Vibe CLI</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥295</span><a href="https://adamj.eu/tech/2025/12/03/django-whats-new-6.0/" target="_blank">Django: what’s new in 6.0</a></li></ul>
                 </div>
                 
-                <div class="card github">
-                    <h2>🐍 GitHub Python</h2>
-                    <div class="project-item"><div class="p-title"><a href="https://github.com/datawhalechina/hello-agents" target="_blank">datawhalechina/hello-agents</a> <span class="stars">⭐439</span></div><div class="p-desc">📚 《从零开始构建智能体》——从零开始的智能体原理与实践教程...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/microsoft/VibeVoice" target="_blank">microsoft/VibeVoice</a> <span class="stars">⭐988</span></div><div class="p-desc">Open-Source Frontier Voice AI...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/666ghj/BettaFish" target="_blank">666ghj/BettaFish</a> <span class="stars">⭐331</span></div><div class="p-desc">微舆：人人可用的多Agent舆情分析助手，打破信息茧房，还原舆情原貌，预测未来走向，辅助决策！从0实...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/infiniflow/ragflow" target="_blank">infiniflow/ragflow</a> <span class="stars">⭐187</span></div><div class="p-desc">RAGFlow is a leading open-source Retrieval-Augment...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/google/adk-samples" target="_blank">google/adk-samples</a> <span class="stars">⭐285</span></div><div class="p-desc">A collection of sample agents built with Agent Dev...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/AsyncFuncAI/deepwiki-open" target="_blank">AsyncFuncAI/deepwiki-open</a> <span class="stars">⭐27</span></div><div class="p-desc">Open Source DeepWiki: AI-Powered Wiki Generator fo...</div></div>
+                <div class="card cve">
+                    <h2>🚨 Latest CVE</h2>
+                    <div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=None" target="_blank" class="cve-id">None</a><p class="cve-desc">无描述...</p></div><div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-7073" target="_blank" class="cve-id">CVE-2025-7073</a><p class="cve-desc">无描述...</p></div><div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=None" target="_blank" class="cve-id">None</a><p class="cve-desc">无描述...</p></div><div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-66675" target="_blank" class="cve-id">CVE-2025-66675</a><p class="cve-desc">无描述...</p></div><div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=None" target="_blank" class="cve-id">None</a><p class="cve-desc">无描述...</p></div>
                 </div>
-                
-                <div class="card finance">
-                    <h2>💰 Market</h2>
+
+                <div class="card finance" style="grid-column: 1 / -1;">
+                    <h2>💰 Market Overview</h2>
                     <div class="finance-grid">
-                        <div class="finance-item"><div class="f-name">纳斯达克</div><div class="f-price">23576.49</div><div class="f-change" style="color:#d63031">+0.13%</div></div><div class="finance-item"><div class="f-name">比特币</div><div class="f-price">92366.45</div><div class="f-change" style="color:#00b894">-0.35%</div></div><div class="finance-item"><div class="f-name">英伟达</div><div class="f-price">184.97</div><div class="f-change" style="color:#00b894">-0.31%</div></div>
+                        <div class="f-item"><div class="f-name">BTC</div><div class="f-price">92,366.8</div><div class="f-change" style="color:#2ecc71">-0.35%</div></div><div class="f-item"><div class="f-name">ETH</div><div class="f-price">3,318.4</div><div class="f-change" style="color:#2ecc71">-0.08%</div></div><div class="f-item"><div class="f-name">NVDA</div><div class="f-price">185.0</div><div class="f-change" style="color:#2ecc71">-0.31%</div></div><div class="f-item"><div class="f-name">纳指</div><div class="f-price">23,576.5</div><div class="f-change" style="color:#e74c3c">+0.13%</div></div>
                     </div>
                 </div>
             </div>
