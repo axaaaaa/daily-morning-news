@@ -84,7 +84,6 @@ def get_finance():
                     prev_close = hist['Close'].iloc[0]
                     change = (price - prev_close) / prev_close * 100
                     change_str = f"{change:+.2f}%"
-                    # 红色涨，绿色跌
                     color = "#d63031" if change > 0 else "#00b894"
                 else:
                     change_str = "-"
@@ -106,7 +105,6 @@ def get_finance():
 def get_hacker_news():
     news_list = []
     try:
-        # 增加超时设置，防止卡住
         ids = requests.get("https://hacker-news.firebaseio.com/v0/topstories.json", timeout=10).json()[:8]
         for item_id in ids:
             item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json", timeout=5).json()
@@ -146,7 +144,7 @@ def get_v2ex_hot():
     return topics
 
 # -----------------------------------------------------------------------------
-# 生成 HTML
+# 生成 HTML (Compact Version)
 # -----------------------------------------------------------------------------
 def generate_html(news, projects, finance, hacker_news, v2ex_data):
     utc_now = datetime.datetime.utcnow()
@@ -154,20 +152,21 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
     date_str = beijing_time.strftime("%Y-%m-%d %H:%M")
 
     # 1. 36Kr HTML
-    news_html = "".join([f'<li><span class="date">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in news])
+    news_html = "".join([f'<li><span class="date">{n["date"][5:]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in news])
+    # 注意：日期截取了 [5:] (例如 12-10) 以节省空间
     
     # 2. Hacker News HTML
-    hn_html = "".join([f'<li><span class="date" style="color:#ff6600; font-weight:bold;">{n["score"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hacker_news])
+    hn_html = "".join([f'<li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">{n["score"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hacker_news])
     
     # 3. V2EX HTML
-    v2ex_html = "".join([f'<li><span class="date">{n["replies"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in v2ex_data])
+    v2ex_html = "".join([f'<li><span class="date" style="min-width:45px;">{n["replies"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in v2ex_data])
 
     # 4. GitHub HTML
     projects_html = "".join([f'''
         <div class="project-item">
             <div class="p-title"><a href="{p["link"]}" target="_blank">{p["title"]}</a> <span class="stars">⭐{p["stars"]}</span></div>
-            <div class="p-desc">{p["desc"]}</div>
-        </div>''' for p in projects])
+            <div class="p-desc">{p["desc"][:60]}...</div> 
+        </div>''' for p in projects]) # 描述截断到60字
         
     # 5. Finance HTML
     finance_html = "".join([f'''
@@ -186,39 +185,47 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
         <title>我的极客仪表盘</title>
         <style>
             :root {{ --bg: #f4f6f8; --card-bg: #ffffff; --text: #333; --accent: #007bff; }}
-            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }}
-            .container {{ max-width: 1400px; margin: 0 auto; }} /* 宽度加大 */
-            header {{ text-align: center; margin-bottom: 30px; }}
-            h1 {{ margin: 0; font-size: 2em; color: #2c3e50; }}
-            .time {{ color: #7f8c8d; font-size: 0.9em; margin-top: 5px; }}
+            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 13px; }}
             
-            /* Responsive Grid */
-            .dashboard {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }}
+            /* 1. 容器变小 */
+            .container {{ max-width: 1100px; margin: 0 auto; }} 
             
-            .card {{ background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }}
-            .card:hover {{ transform: translateY(-3px); box-shadow: 0 8px 12px rgba(0,0,0,0.1); }}
-            .card h2 {{ margin-top: 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 1.2em; color: #007bff; display: flex; align-items: center; justify-content: space-between;}}
+            header {{ text-align: center; margin-bottom: 20px; }}
+            h1 {{ margin: 0; font-size: 1.6em; color: #2c3e50; }}
+            .time {{ color: #7f8c8d; font-size: 0.85em; margin-top: 4px; }}
+            
+            /* 2. Grid 变紧凑，卡片最小宽度减小 */
+            .dashboard {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }}
+            
+            /* 3. 卡片内边距减小 */
+            .card {{ background: var(--card-bg); border-radius: 10px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }}
+            .card:hover {{ transform: translateY(-2px); box-shadow: 0 6px 10px rgba(0,0,0,0.08); }}
+            
+            /* 标题变小 */
+            .card h2 {{ margin-top: 0; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; color: #007bff; display: flex; align-items: center; justify-content: space-between;}}
             
             ul.news-list {{ list-style: none; padding: 0; }}
-            ul.news-list li {{ padding: 8px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; font-size: 0.95em; }}
+            
+            /* 列表行高变小 */
+            ul.news-list li {{ padding: 5px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; }}
             ul.news-list li:last-child {{ border-bottom: none; }}
             
-            /* 日期/热度标签样式 */
-            .date {{ font-size: 0.85em; color: #999; margin-right: 10px; min-width: 65px; text-align: right; flex-shrink: 0; }}
+            /* 日期标签变小 */
+            .date {{ font-size: 0.85em; color: #999; margin-right: 8px; min-width: 45px; text-align: right; flex-shrink: 0; }}
             
-            a {{ text-decoration: none; color: #333; transition: color 0.2s; line-height: 1.4; }}
+            a {{ text-decoration: none; color: #333; transition: color 0.2s; line-height: 1.3; }}
             a:hover {{ color: var(--accent); }}
             
-            .project-item {{ margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f9f9f9; }}
-            .p-title {{ font-weight: bold; font-size: 1.05em; }}
-            .p-desc {{ font-size: 0.9em; color: #666; margin-top: 4px; line-height: 1.4; }}
-            .stars {{ float: right; font-size: 0.8em; color: #f1c40f; background: #fffbe6; padding: 2px 6px; border-radius: 4px; }}
+            .project-item {{ margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #f9f9f9; }}
+            .p-title {{ font-weight: bold; font-size: 1em; }}
+            .p-desc {{ font-size: 0.9em; color: #666; margin-top: 2px; line-height: 1.3; }}
+            .stars {{ float: right; font-size: 0.8em; color: #f1c40f; background: #fffbe6; padding: 1px 5px; border-radius: 3px; }}
             
-            .finance-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }}
-            .finance-item {{ text-align: center; padding: 10px; background: #f8f9fa; border-radius: 8px; }}
-            .f-name {{ font-size: 0.9em; color: #666; }}
-            .f-price {{ font-size: 1.2em; font-weight: bold; margin: 5px 0; }}
-            .f-change {{ font-size: 0.9em; font-weight: bold; }}
+            .finance-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }}
+            .finance-item {{ text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px; }}
+            .f-name {{ font-size: 0.85em; color: #666; }}
+            .f-price {{ font-size: 1.1em; font-weight: bold; margin: 3px 0; }}
+            .f-change {{ font-size: 0.85em; font-weight: bold; }}
             
             @media (max-width: 768px) {{ .dashboard {{ grid-template-columns: 1fr; }} }}
         </style>
@@ -227,12 +234,12 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
         <div class="container">
             <header>
                 <h1>🚀 Daily Dashboard</h1>
-                <p class="time">更新于: {date_str} (Beijing Time)</p>
+                <p class="time">Update: {date_str}</p>
             </header>
             
             <div class="dashboard">
                 <div class="card">
-                    <h2>📰 36Kr 科技</h2>
+                    <h2>📰 36Kr</h2>
                     <ul class="news-list">
                         {news_html}
                     </ul>
@@ -246,7 +253,7 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
                 </div>
 
                 <div class="card">
-                    <h2>⚡ V2EX 极客</h2>
+                    <h2>⚡ V2EX</h2>
                     <ul class="news-list">
                         {v2ex_html}
                     </ul>
@@ -258,7 +265,7 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
                 </div>
                 
                 <div class="card">
-                    <h2>💰 市场指数</h2>
+                    <h2>💰 Market</h2>
                     <div class="finance-grid">
                         {finance_html}
                     </div>
@@ -276,7 +283,7 @@ def generate_html(news, projects, finance, hacker_news, v2ex_data):
 # Main Execution
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
-    print("Starting job...")
+    print("Starting job (Compact Mode)...")
     
     print("Fetching News (36Kr)...")
     news_data = get_news()
