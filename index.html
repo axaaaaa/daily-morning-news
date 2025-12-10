@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>InfoSec Dashboard</title>
+        <title>Geek Dashboard</title>
         <style>
             :root { --bg: #f4f6f8; --card: #ffffff; --text: #2c3e50; --link: #34495e; }
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 13px; }
@@ -15,33 +15,29 @@
             h1 { margin: 0; font-size: 1.5em; color: #34495e; letter-spacing: -0.5px; }
             .time { color: #95a5a6; font-family: monospace; }
             
-            /* 响应式网格 */
+            /* 布局：3列 */
             .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
             
             .card { background: var(--card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #e1e4e8; }
             .card h2 { margin: 0 0 12px 0; font-size: 1.1em; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; color: #2c3e50; }
             
-            /* 板块颜色条 */
+            /* 板块颜色定义 */
             .hackread h2 { border-color: #e74c3c; } /* 红 */
-            .thn h2 { border-color: #1abc9c; }      /* 青绿 */
+            .thn h2 { border-color: #1abc9c; }      /* 青 */
             .hn h2 { border-color: #f39c12; }       /* 橙 */
-            .cve h2 { border-color: #9b59b6; }      /* 紫 */
+            .x-trends h2 { border-color: #000000; } /* 黑 (X) */
+            .yt-trends h2 { border-color: #c4302b; } /* 红 (YouTube) */
             .finance h2 { border-color: #3498db; }  /* 蓝 */
 
             ul { padding: 0; margin: 0; list-style: none; }
             li { padding: 6px 0; border-bottom: 1px dashed #f0f0f0; display: flex; align-items: baseline; }
             li:last-child { border-bottom: none; }
             
-            .date { color: #bdc3c7; margin-right: 10px; min-width: 45px; text-align: right; font-family: monospace; flex-shrink: 0; }
+            .date { color: #bdc3c7; margin-right: 10px; min-width: 55px; text-align: right; font-family: monospace; flex-shrink: 0; font-size: 0.9em; }
             a { text-decoration: none; color: var(--link); transition: color 0.2s; }
             a:hover { color: #3498db; }
             
-            /* CVE */
-            .cve-item { margin-bottom: 8px; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px; }
-            .cve-id { color: #c0392b; font-weight: bold; font-family: monospace; font-size: 1.05em; }
-            .cve-desc { margin: 2px 0 0 0; color: #7f8c8d; font-size: 0.9em; line-height: 1.4; }
-            
-            /* Finance */
+            /* Finance Grid */
             .finance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
             .f-item { text-align: center; background: #fafafa; padding: 8px; border-radius: 6px; }
             .f-name { font-size: 0.8em; color: #95a5a6; }
@@ -56,8 +52,8 @@
     <body>
         <div class="container">
             <header>
-                <h1>🛡️ Security Dashboard</h1>
-                <div class="time">2025-12-10 11:45</div>
+                <h1>🚀 Geek Dashboard</h1>
+                <div class="time">2025-12-10 11:54</div>
             </header>
             
             <div class="grid">
@@ -73,18 +69,23 @@
 
                 <div class="card hn">
                     <h2>🍊 Hacker News (YC)</h2>
-                    <ul><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥2720</span><a href="https://dosaygo-studio.github.io/hn-front-page-2035/news" target="_blank">Show HN: Gemini Pro 3 hallucinates the HN front page 10 years from now</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥582</span><a href="https://lwn.net/Articles/1049831/" target="_blank">Rust in the kernel is no longer experimental</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥98</span><a href="https://eli.thegreenplace.net/2025/revisiting-lets-build-a-compiler/" target="_blank">Revisiting "Let's Build a Compiler"</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥558</span><a href="https://www.digitalpublicgoods.net/r/peertube" target="_blank">PeerTube is recognized as a digital public good by Digital Public Goods Alliance</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥45</span><a href="https://eamonnsullivan.co.uk/posts-output/email-setup/2025-12-3-putting-email-in-its-place/" target="_blank">Putting email in its place with Emacs and Mu4e</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥160</span><a href="https://blog.mozilla.org/en/mozilla/av1-video-codec-wins-emmy/" target="_blank">When a video codec wins an Emmy</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥622</span><a href="https://mistral.ai/news/devstral-2-vibe-cli" target="_blank">Mistral releases Devstral2 and Mistral Vibe CLI</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥493</span><a href="https://stephenramsay.net/posts/vibe-coding.html" target="_blank">If you're going to vibe code, why not do it in C?</a></li></ul>
+                    <ul><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥2728</span><a href="https://dosaygo-studio.github.io/hn-front-page-2035/news" target="_blank">Show HN: Gemini Pro 3 hallucinates the HN front page 10 years from now</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥592</span><a href="https://lwn.net/Articles/1049831/" target="_blank">Rust in the kernel is no longer experimental</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥101</span><a href="https://eli.thegreenplace.net/2025/revisiting-lets-build-a-compiler/" target="_blank">Revisiting "Let's Build a Compiler"</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥560</span><a href="https://www.digitalpublicgoods.net/r/peertube" target="_blank">PeerTube is recognized as a digital public good by Digital Public Goods Alliance</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥45</span><a href="https://eamonnsullivan.co.uk/posts-output/email-setup/2025-12-3-putting-email-in-its-place/" target="_blank">Putting email in its place with Emacs and Mu4e</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥160</span><a href="https://blog.mozilla.org/en/mozilla/av1-video-codec-wins-emmy/" target="_blank">When a video codec wins an Emmy</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥624</span><a href="https://mistral.ai/news/devstral-2-vibe-cli" target="_blank">Mistral releases Devstral2 and Mistral Vibe CLI</a></li><li><span class="date" style="color:#f39c12;font-weight:bold;">🔥300</span><a href="https://adamj.eu/tech/2025/12/03/django-whats-new-6.0/" target="_blank">Django: what’s new in 6.0</a></li></ul>
                 </div>
                 
-                <div class="card cve">
-                    <h2>🚨 Latest CVE</h2>
-                    <div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=None" target="_blank" class="cve-id">None</a><p class="cve-desc">暂无描述...</p></div><div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=None" target="_blank" class="cve-id">None</a><p class="cve-desc">暂无描述...</p></div><div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=None" target="_blank" class="cve-id">None</a><p class="cve-desc">暂无描述...</p></div><div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=None" target="_blank" class="cve-id">None</a><p class="cve-desc">暂无描述...</p></div><div class="cve-item"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=None" target="_blank" class="cve-id">None</a><p class="cve-desc">暂无描述...</p></div>
+                <div class="card x-trends">
+                    <h2>✖️ X (Twitter) Trends</h2>
+                    <ul></ul>
+                </div>
+
+                <div class="card yt-trends">
+                    <h2>▶️ YouTube Trending</h2>
+                    <ul><li><span class="date" style="color:#c4302b;font-size:0.8em;">▶Ulises | Destripando la Historia</span><a href="https://www.youtube.com/watch?v=azzEfyGUfX0" target="_blank">Ulises | Destripando la Historia</a></li><li><span class="date" style="color:#c4302b;font-size:0.8em;">▶Daddy Yankee - Jezabel Y Judas  (Video Oficial)</span><a href="https://www.youtube.com/watch?v=ssvHIzxHBz8" target="_blank">Daddy Yankee - Jezabel Y Judas  (Video Oficial)</a></li><li><span class="date" style="color:#c4302b;font-size:0.8em;">▶BeÃ©le - QuÃ©dete (Letra)</span><a href="https://www.youtube.com/watch?v=rABMrhvtfCY" target="_blank">BeÃ©le - QuÃ©dete (Letra)</a></li><li><span class="date" style="color:#c4302b;font-size:0.8em;">▶ALLDAY PROJECT - âLOOK AT MEâ M/V</span><a href="https://www.youtube.com/watch?v=9nOrPNxjvck" target="_blank">ALLDAY PROJECT - âLOOK AT MEâ M/V</a></li><li><span class="date" style="color:#c4302b;font-size:0.8em;">▶Sia - Snowman (Lyrics)</span><a href="https://www.youtube.com/watch?v=4cdFSRXjXHY" target="_blank">Sia - Snowman (Lyrics)</a></li><li><span class="date" style="color:#c4302b;font-size:0.8em;">▶KAROL G - Ivonny Bonita (Official Video)</span><a href="https://www.youtube.com/watch?v=YcBUfrOguRQ" target="_blank">KAROL G - Ivonny Bonita (Official Video)</a></li><li><span class="date" style="color:#c4302b;font-size:0.8em;">▶Shararat | Dhurandhar | Ranveer, Aditya Dhar, Shashwat, Jasmine, Madhubanti, Ayesha, Krystle</span><a href="https://www.youtube.com/watch?v=YyepU5ztLf4" target="_blank">Shararat | Dhurandhar | Ranveer, Aditya Dhar, Shashwat, Jasmine, Madhubanti, Ayesha, Krystle</a></li><li><span class="date" style="color:#c4302b;font-size:0.8em;">▶Miley Cyrus - Dream As One (from Avatar: Fire and Ash - Official Video)</span><a href="https://www.youtube.com/watch?v=6rrSeNLcsTE" target="_blank">Miley Cyrus - Dream As One (from Avatar: Fire and Ash - Official Video)</a></li></ul>
                 </div>
 
                 <div class="card finance" style="grid-column: 1 / -1;">
-                    <h2>💰 Global Markets</h2>
+                    <h2>💰 Market Overview</h2>
                     <div class="finance-grid">
-                        <div class="f-item"><div class="f-name">BTC</div><div class="f-price">92,028.5</div><div class="f-change" style="color:#2ecc71">-0.72%</div></div><div class="f-item"><div class="f-name">ETH</div><div class="f-price">3,306.9</div><div class="f-change" style="color:#2ecc71">-0.43%</div></div><div class="f-item"><div class="f-name">NVDA</div><div class="f-price">185.0</div><div class="f-change" style="color:#2ecc71">-0.31%</div></div><div class="f-item"><div class="f-name">NASDAQ</div><div class="f-price">23,576.5</div><div class="f-change" style="color:#e74c3c">+0.13%</div></div>
+                        <div class="f-item"><div class="f-name">BTC</div><div class="f-price">92,047.3</div><div class="f-change" style="color:#2ecc71">-0.70%</div></div><div class="f-item"><div class="f-name">ETH</div><div class="f-price">3,312.6</div><div class="f-change" style="color:#2ecc71">-0.26%</div></div><div class="f-item"><div class="f-name">NVDA</div><div class="f-price">185.0</div><div class="f-change" style="color:#2ecc71">-0.31%</div></div><div class="f-item"><div class="f-name">NASDAQ</div><div class="f-price">23,576.5</div><div class="f-change" style="color:#e74c3c">+0.13%</div></div>
                     </div>
                 </div>
             </div>
