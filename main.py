@@ -2,11 +2,18 @@
 import requests
 import feedparser
 import yfinance as yf
+from bs4 import BeautifulSoup
 import datetime
 import time
 
+# 伪装浏览器头，防止第三方统计网站拦截
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Language': 'en-US,en;q=0.9'
+}
+
 # =============================================================================
-# 1. HackRead (RSS) - 保持不变
+# 1. HackRead (RSS)
 # =============================================================================
 def get_hackread():
     news_list = []
@@ -24,24 +31,19 @@ def get_hackread():
                 "link": entry.link,
                 "date": pub_date
             })
-    except Exception as e:
-        print(f"HackRead Error: {e}")
+    except:
         news_list.append({"title": "HackRead 获取失败", "link": "#", "date": "Err"})
     return news_list
 
 # =============================================================================
-# 2. [新替换] The Hacker News (RSS) - 替代 SC World
-#    源地址: https://feeds.feedburner.com/TheHackersNews
+# 2. The Hacker News (RSS)
 # =============================================================================
 def get_thehackernews():
     news_list = []
     print(">>> 正在获取 The Hacker News...")
     try:
-        # 使用 feedparser 解析 RSS，速度快且稳定
         feed = feedparser.parse("https://feeds.feedburner.com/TheHackersNews")
-        
         for entry in feed.entries[:8]:
-            # 处理日期
             pub_date = "Today"
             if hasattr(entry, 'published_parsed'):
                 dt = datetime.datetime(*entry.published_parsed[:6])
@@ -52,19 +54,17 @@ def get_thehackernews():
                 "link": entry.link,
                 "date": pub_date
             })
-    except Exception as e:
-        print(f"THN Error: {e}")
-        news_list.append({"title": "The Hacker News 获取失败", "link": "#", "date": "Err"})
+    except:
+        news_list.append({"title": "THN 获取失败", "link": "#", "date": "Err"})
     return news_list
 
 # =============================================================================
-# 3. Hacker News (API) - 极客标配
+# 3. Hacker News (API)
 # =============================================================================
 def get_hacker_news():
     news = []
-    print(">>> 正在获取 Hacker News (YCombinator)...")
+    print(">>> 正在获取 Hacker News (YC)...")
     try:
-        # 获取前 8 个热门 Stories ID
         ids = requests.get("https://hacker-news.firebaseio.com/v0/topstories.json", timeout=10).json()[:8]
         for i in ids:
             item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{i}.json", timeout=5).json()
@@ -79,27 +79,82 @@ def get_hacker_news():
     return news
 
 # =============================================================================
-# 4. 最新 CVE 漏洞 (API)
+# 4. [新增] X (Twitter) Global Trends
+#    源: Trends24 (比爬官方推特稳100倍)
 # =============================================================================
-def get_cve_alerts():
-    cve_list = []
-    print(">>> 正在获取最新 CVE...")
+def get_x_trends():
+    data = []
+    print(">>> 正在获取 X (Twitter) Trends...")
+    # 这里抓取全球榜 (Worldwide)，如果想看美国榜改 url 为 https://trends24.in/united-states/
+    url = "https://trends24.in/" 
     try:
-        # 使用 circl.lu 的公共 API
-        r = requests.get("https://cve.circl.lu/api/last", timeout=10)
-        for item in r.json()[:5]:
-            cve_list.append({
-                "id": item.get('id'),
-                # 限制描述长度，防止破坏布局
-                "desc": item.get('summary', '暂无描述')[:65] + "...",
-                "link": f"https://cve.mitre.org/cgi-bin/cvename.cgi?name={item.get('id')}"
-            })
-    except:
-        cve_list.append({"id": "Error", "desc": "CVE API 连接失败", "link": "#"})
-    return cve_list
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        
+        # Trends24 的结构是很多个卡片，第一个卡片是“现在”
+        current_card = soup.select_one('#trend-list .trend-card')
+        if current_card:
+            trends = current_card.select('li a')
+            for t in trends[:8]: # 取前8个
+                name = t.text.strip()
+                link = t['href']
+                # 尝试获取热度 (span class="tweet-count")
+                count_span = t.find_next_sibling('span')
+                heat = count_span.text.strip() if count_span else "Hot"
+                
+                data.append({
+                    "title": name,
+                    "link": link,
+                    "heat": heat
+                })
+    except Exception as e:
+        print(f"X Trends Error: {e}")
+        data.append({"title": "X Trends 获取失败", "link": "#", "heat": "Err"})
+    return data
 
 # =============================================================================
-# 5. 金融数据 (Yahoo API)
+# 5. [新增] YouTube Trending
+#    源: Kworb (纯数据统计站，速度快)
+# =============================================================================
+def get_youtube_trends():
+    data = []
+    print(">>> 正在获取 YouTube Trending...")
+    # Kworb 的全球 YouTube 趋势榜
+    url = "https://kworb.net/youtube/trending.html"
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        
+        # 数据在表格中
+        rows = soup.select('table tbody tr')
+        for row in rows[:8]:
+            # Kworb 表格结构: 链接在第一个含 a 的 td 里
+            link_tag = row.select_one('a')
+            if link_tag:
+                title = link_tag.text.strip()
+                # 补全链接
+                href = link_tag['href']
+                if "http" not in href:
+                    href = "https://www.youtube.com/watch?v=" + href.split('/')[-1].replace('.html', '')
+                
+                # 获取播放量增量 (通常在第三列)
+                tds = row.select('td')
+                views = "Hot"
+                if len(tds) > 2:
+                    views = "▶" + tds[2].text.strip()
+
+                data.append({
+                    "title": title,
+                    "link": href,
+                    "views": views
+                })
+    except Exception as e:
+        print(f"YouTube Error: {e}")
+        data.append({"title": "YT Trending 获取失败", "link": "#", "views": "Err"})
+    return data
+
+# =============================================================================
+# 6. 金融数据 (Yahoo)
 # =============================================================================
 def get_finance():
     data = []
@@ -121,7 +176,7 @@ def get_finance():
                     prev = hist['Close'].iloc[0]
                     pct = ((price - prev) / prev) * 100
                     change_str = f"{pct:+.2f}%"
-                    color = "#e74c3c" if pct > 0 else "#2ecc71" # 红涨绿跌
+                    color = "#e74c3c" if pct > 0 else "#2ecc71"
                 
                 data.append({
                     "name": item["name"],
@@ -136,18 +191,21 @@ def get_finance():
 # =============================================================================
 # 生成 HTML
 # =============================================================================
-def generate_html(hackread, thn, hn, cve, finance):
+def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     
-    # 列表 HTML 生成
+    # 基础列表生成
     hackread_html = "".join([f'<li><span class="date">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hackread])
     thn_html = "".join([f'<li><span class="date" style="color:#1abc9c;">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in thn])
     hn_html = "".join([f'<li><span class="date" style="color:#f39c12;font-weight:bold;">{n["score"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hn])
     
-    # CVE 卡片 HTML
-    cve_html = "".join([f'<div class="cve-item"><a href="{c["link"]}" target="_blank" class="cve-id">{c["id"]}</a><p class="cve-desc">{c["desc"]}</p></div>' for c in cve])
+    # X Trends 生成 (黑色主题)
+    x_html = "".join([f'<li><span class="date" style="color:#000;font-weight:bold;font-size:0.8em;">{n["heat"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in x_trends])
     
-    # 金融卡片 HTML
+    # YouTube Trends 生成 (红色主题)
+    yt_html = "".join([f'<li><span class="date" style="color:#c4302b;font-size:0.8em;">{n["views"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in yt_trends])
+    
+    # 金融生成
     finance_html = "".join([f'<div class="f-item"><div class="f-name">{f["name"]}</div><div class="f-price">{f["price"]}</div><div class="f-change" style="color:{f["color"]}">{f["change"]}</div></div>' for f in finance])
 
     html = f"""
@@ -156,7 +214,7 @@ def generate_html(hackread, thn, hn, cve, finance):
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>InfoSec Dashboard</title>
+        <title>Geek Dashboard</title>
         <style>
             :root {{ --bg: #f4f6f8; --card: #ffffff; --text: #2c3e50; --link: #34495e; }}
             body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 13px; }}
@@ -167,33 +225,29 @@ def generate_html(hackread, thn, hn, cve, finance):
             h1 {{ margin: 0; font-size: 1.5em; color: #34495e; letter-spacing: -0.5px; }}
             .time {{ color: #95a5a6; font-family: monospace; }}
             
-            /* 响应式网格 */
+            /* 布局：3列 */
             .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }}
             
             .card {{ background: var(--card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #e1e4e8; }}
             .card h2 {{ margin: 0 0 12px 0; font-size: 1.1em; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; color: #2c3e50; }}
             
-            /* 板块颜色条 */
+            /* 板块颜色定义 */
             .hackread h2 {{ border-color: #e74c3c; }} /* 红 */
-            .thn h2 {{ border-color: #1abc9c; }}      /* 青绿 */
+            .thn h2 {{ border-color: #1abc9c; }}      /* 青 */
             .hn h2 {{ border-color: #f39c12; }}       /* 橙 */
-            .cve h2 {{ border-color: #9b59b6; }}      /* 紫 */
+            .x-trends h2 {{ border-color: #000000; }} /* 黑 (X) */
+            .yt-trends h2 {{ border-color: #c4302b; }} /* 红 (YouTube) */
             .finance h2 {{ border-color: #3498db; }}  /* 蓝 */
 
             ul {{ padding: 0; margin: 0; list-style: none; }}
             li {{ padding: 6px 0; border-bottom: 1px dashed #f0f0f0; display: flex; align-items: baseline; }}
             li:last-child {{ border-bottom: none; }}
             
-            .date {{ color: #bdc3c7; margin-right: 10px; min-width: 45px; text-align: right; font-family: monospace; flex-shrink: 0; }}
+            .date {{ color: #bdc3c7; margin-right: 10px; min-width: 55px; text-align: right; font-family: monospace; flex-shrink: 0; font-size: 0.9em; }}
             a {{ text-decoration: none; color: var(--link); transition: color 0.2s; }}
             a:hover {{ color: #3498db; }}
             
-            /* CVE */
-            .cve-item {{ margin-bottom: 8px; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px; }}
-            .cve-id {{ color: #c0392b; font-weight: bold; font-family: monospace; font-size: 1.05em; }}
-            .cve-desc {{ margin: 2px 0 0 0; color: #7f8c8d; font-size: 0.9em; line-height: 1.4; }}
-            
-            /* Finance */
+            /* Finance Grid */
             .finance-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }}
             .f-item {{ text-align: center; background: #fafafa; padding: 8px; border-radius: 6px; }}
             .f-name {{ font-size: 0.8em; color: #95a5a6; }}
@@ -208,7 +262,7 @@ def generate_html(hackread, thn, hn, cve, finance):
     <body>
         <div class="container">
             <header>
-                <h1>🛡️ Security Dashboard</h1>
+                <h1>🚀 Geek Dashboard</h1>
                 <div class="time">{now}</div>
             </header>
             
@@ -228,13 +282,18 @@ def generate_html(hackread, thn, hn, cve, finance):
                     <ul>{hn_html}</ul>
                 </div>
                 
-                <div class="card cve">
-                    <h2>🚨 Latest CVE</h2>
-                    {cve_html}
+                <div class="card x-trends">
+                    <h2>✖️ X (Twitter) Trends</h2>
+                    <ul>{x_html}</ul>
+                </div>
+
+                <div class="card yt-trends">
+                    <h2>▶️ YouTube Trending</h2>
+                    <ul>{yt_html}</ul>
                 </div>
 
                 <div class="card finance" style="grid-column: 1 / -1;">
-                    <h2>💰 Global Markets</h2>
+                    <h2>💰 Market Overview</h2>
                     <div class="finance-grid">
                         {finance_html}
                     </div>
@@ -249,17 +308,19 @@ def generate_html(hackread, thn, hn, cve, finance):
         f.write(html)
     print(">>> index.html 生成完毕！")
 
+# =============================================================================
+# Main
+# =============================================================================
 if __name__ == "__main__":
     print("=== 开始任务 ===")
     
-    # 抓取数据
-    hackread_data = get_hackread()
-    thn_data = get_thehackernews() # 新增
-    hn_data = get_hacker_news()
-    cve_data = get_cve_alerts()
-    finance_data = get_finance()
+    hackread = get_hackread()
+    thn = get_thehackernews()
+    hn = get_hacker_news()
+    x_data = get_x_trends()     # 新增
+    yt_data = get_youtube_trends() # 新增
+    fin = get_finance()
     
-    # 生成 HTML
-    generate_html(hackread_data, thn_data, hn_data, cve_data, finance_data)
+    generate_html(hackread, thn, hn, x_data, yt_data, fin)
     
-    print("=== 任务完成 ===")
+    print("=== 完成 ===")
