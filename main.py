@@ -2,188 +2,166 @@
 import requests
 import feedparser
 import yfinance as yf
-from bs4 import BeautifulSoup
 import datetime
-import os
+import time
 
 # =============================================================================
-# 1. 聚合科技新闻 (ReadHub) - 替代 36Kr
+# 1. [修复] 聚合科技新闻 (ReadHub API)
+#    直接调用接口，不再抓取网页，解决“不显示”的问题
 # =============================================================================
 def get_readhub():
     news_list = []
+    print(">>> 正在获取 ReadHub...")
     try:
-        # ReadHub 热门话题
-        api_url = "https://api.readhub.cn/topic?pageSize=10"
+        # type=news 代表科技动态, pageSize=10 代表取10条
+        api_url = "https://api.readhub.cn/topic?type=news&pageSize=10"
         r = requests.get(api_url, timeout=10)
+        
         if r.status_code == 200:
             items = r.json().get('data', [])
             for item in items:
-                # 截取时间 HH:MM
-                time_str = item['publishDate'][11:16]
+                # 原始时间格式: "2023-12-10T10:30:00.000Z" -> 截取 "10:30"
+                time_str = item['publishDate'][11:16] 
                 news_list.append({
                     "title": item['title'],
                     "link": f"https://readhub.cn/topic/{item['id']}",
                     "date": time_str
                 })
+        else:
+            news_list.append({"title": "ReadHub 接口返回错误", "link": "#", "date": "Err"})
+            
     except Exception as e:
         print(f"ReadHub Error: {e}")
-        news_list.append({"title": "ReadHub 抓取失败", "link": "#", "date": "Err"})
+        news_list.append({"title": "ReadHub 连接失败", "link": "#", "date": "Err"})
     return news_list
 
 # =============================================================================
-# 2. 安全情报 (Solidot + CVE)
+# 2. [修复] 网络安全 (FreeBuf RSS)
+#    改用 RSS 解析，解决“显示不对/错乱”的问题
 # =============================================================================
-def get_solidot():
-    # 硬核科技/开源/安全新闻
+def get_security_news():
     news_list = []
+    print(">>> 正在获取 FreeBuf 安全情报...")
     try:
-        feed = feedparser.parse("https://solidot.org/index.rss")
-        for entry in feed.entries[:6]:
-            # Solidot 的日期通常比较长，简化一下
-            date_pub = entry.published.split('T')[0][5:] if 'T' in entry.published else "Today"
+        # FreeBuf 的 RSS 源非常稳定
+        feed = feedparser.parse("https://www.freebuf.com/feed")
+        
+        if not feed.entries:
+            # 如果 FreeBuf 挂了，备用方案：Solidot
+            feed = feedparser.parse("https://solidot.org/index.rss")
+            
+        for entry in feed.entries[:8]:
+            # 处理日期，只留 月-日
+            pub_date = "Today"
+            if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                dt = datetime.datetime(*entry.published_parsed[:6])
+                pub_date = dt.strftime("%m-%d")
+            
             news_list.append({
                 "title": entry.title,
                 "link": entry.link,
-                "date": date_pub
+                "date": pub_date
             })
     except Exception as e:
-        print(f"Solidot Error: {e}")
+        print(f"Security Error: {e}")
+        news_list.append({"title": "安全情报获取失败", "link": "#", "date": "Err"})
     return news_list
 
+# =============================================================================
+# 3. 最新 CVE 漏洞 (API)
+# =============================================================================
 def get_cve_alerts():
-    # 获取最新的 CVE 漏洞 (使用 cve.circl.lu API，无需 Key)
     cve_list = []
+    print(">>> 正在获取最新 CVE...")
     try:
-        # 获取最近 5 个
         r = requests.get("https://cve.circl.lu/api/last", timeout=10)
         if r.status_code == 200:
-            items = r.json()[:5]
-            for item in items:
-                cve_id = item.get('id', 'Unknown')
-                summary = item.get('summary', '暂无描述')
-                # 截断描述以适应紧凑布局
-                desc = summary[:50] + "..." if len(summary) > 50 else summary
+            for item in r.json()[:5]:
                 cve_list.append({
-                    "id": cve_id,
-                    "desc": desc,
-                    "link": f"https://cve.mitre.org/cgi-bin/cvename.cgi?name={cve_id}"
+                    "id": item.get('id'),
+                    # 描述过长则截断
+                    "desc": item.get('summary', '无描述')[:55] + "...",
+                    "link": f"https://cve.mitre.org/cgi-bin/cvename.cgi?name={item.get('id')}"
                 })
-    except Exception as e:
-        print(f"CVE Error: {e}")
-        cve_list.append({"id": "Error", "desc": "无法连接 CVE 数据库", "link": "#"})
+    except:
+        cve_list.append({"id": "Error", "desc": "CVE API 连接失败", "link": "#"})
     return cve_list
 
 # =============================================================================
-# 3. AI 趋势 (Hugging Face Trending)
+# 4. Hacker News (API)
 # =============================================================================
-def get_huggingface():
-    models = []
+def get_hacker_news():
+    news = []
+    print(">>> 正在获取 Hacker News...")
     try:
-        url = "https://huggingface.co/models?sort=trending"
-        r = requests.get(url, timeout=15)
-        soup = BeautifulSoup(r.text, 'html.parser')
-        
-        # HuggingFace 的类名经常变，这里尝试抓取 article 标签
-        articles = soup.select('article')
-        for art in articles[:7]:
-            header = art.select_one('header h4')
-            if not header: continue
-            
-            name = header.text.strip()
-            link = "https://huggingface.co" + art.select_one('a')['href']
-            
-            # 尝试获取点赞/下载数 (通常在底部的 svg 旁边)
-            # 这里做一个简单的容错处理
-            stats_div = art.select_one('div.flex.items-center.mt-2')
-            heat = "🔥"
-            if stats_div:
-                heat = stats_div.get_text(strip=True).replace('\n', ' ')
-            
-            models.append({
-                "name": name,
-                "link": link,
-                "heat": heat
-            })
-    except Exception as e:
-        print(f"HF Error: {e}")
-        models.append({"name": "Fetch Failed", "link": "#", "heat": ""})
-    return models
+        ids = requests.get("https://hacker-news.firebaseio.com/v0/topstories.json", timeout=10).json()[:8]
+        for i in ids:
+            item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{i}.json", timeout=5).json()
+            if item:
+                news.append({
+                    "title": item.get('title'),
+                    "link": item.get('url', f"https://news.ycombinator.com/item?id={i}"),
+                    "score": f"🔥{item.get('score', 0)}"
+                })
+    except:
+        news.append({"title": "HN 获取失败", "link": "#", "score": "Err"})
+    return news
 
 # =============================================================================
-# 4. GitHub Python 热榜 (保留)
-# =============================================================================
-def get_github_trending():
-    projects = []
-    try:
-        url = "https://github.com/trending/python?since=daily"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-        r = requests.get(url, headers=headers, timeout=15)
-        soup = BeautifulSoup(r.text, 'html.parser')
-        
-        for row in soup.select('article.Box-row')[:6]:
-            title_tag = row.select_one('h2 a')
-            if title_tag:
-                title = title_tag.text.strip().replace("\n", "").replace(" ", "")
-                link = "https://github.com" + title_tag['href']
-                
-                desc_tag = row.select_one('p')
-                desc = desc_tag.text.strip() if desc_tag else ""
-                
-                star_tag = row.select_one('span.d-inline-block.float-sm-right')
-                stars = star_tag.text.strip().split()[0] if star_tag else "0"
-                
-                projects.append({"title": title, "link": link, "desc": desc, "stars": stars})
-    except Exception as e:
-        print(f"GitHub Error: {e}")
-    return projects
-
-# =============================================================================
-# 5. 金融数据 (保留)
+# 5. 金融数据 (Yahoo)
 # =============================================================================
 def get_finance():
     data = []
+    print(">>> 正在获取金融数据...")
+    # 可以自定义你想看的代码
     symbols = [
-        {"name": "纳斯达克", "code": "^IXIC"},
-        {"name": "比特币", "code": "BTC-USD"},
-        {"name": "英伟达", "code": "NVDA"}
+        {"name": "BTC", "code": "BTC-USD"},
+        {"name": "ETH", "code": "ETH-USD"},
+        {"name": "NVDA", "code": "NVDA"},
+        {"name": "纳指", "code": "^IXIC"}
     ]
     for item in symbols:
         try:
             ticker = yf.Ticker(item["code"])
+            # 获取最近2天数据以计算涨跌
             hist = ticker.history(period="2d")
-            if len(hist) >= 1:
+            if len(hist) > 0:
                 price = hist['Close'].iloc[-1]
-                if len(hist) >= 2:
-                    change = (price - hist['Close'].iloc[0]) / hist['Close'].iloc[0] * 100
-                    color = "#d63031" if change > 0 else "#00b894"
-                    change_str = f"{change:+.2f}%"
-                else:
-                    color, change_str = "black", "-"
-                data.append({"name": item["name"], "price": f"{price:.2f}", "change": change_str, "color": color})
+                # 计算涨跌幅
+                change_str = "-"
+                color = "#333"
+                if len(hist) > 1:
+                    prev = hist['Close'].iloc[0]
+                    pct = ((price - prev) / prev) * 100
+                    change_str = f"{pct:+.2f}%"
+                    color = "#e74c3c" if pct > 0 else "#2ecc71" # 红涨绿跌
+                
+                data.append({
+                    "name": item["name"],
+                    "price": f"{price:,.1f}", # 千分位
+                    "change": change_str,
+                    "color": color
+                })
         except:
             pass
     return data
 
 # =============================================================================
-# 生成 HTML (Compact Geek Mode)
+# 生成 HTML (Compact Design)
 # =============================================================================
-def generate_html(readhub, solidot, cve, hf, github, finance):
-    date_str = (datetime.datetime.utcnow() + datetime.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
-
-    # 构建 HTML 片段
+def generate_html(readhub, security, cve, hn, finance):
+    # 获取当前时间
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    # 拼接 HTML 列表
     readhub_html = "".join([f'<li><span class="date">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in readhub])
-    
-    solidot_html = "".join([f'<li><span class="date" style="color:#2ecc71;">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in solidot])
-    
-    cve_html = "".join([f'<li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="{c["link"]}" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">{c["id"]}</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">{c["desc"]}</div></li>' for c in cve])
-    
-    hf_html = "".join([f'<li><span class="date" style="color:#f1c40f; font-weight:bold;">{n["heat"][:4]}</span><a href="{n["link"]}" target="_blank">{n["name"]}</a></li>' for n in hf])
-    
-    github_html = "".join([f'<div class="project-item"><div class="p-title"><a href="{p["link"]}" target="_blank">{p["title"]}</a> <span class="stars">⭐{p["stars"]}</span></div><div class="p-desc">{p["desc"][:50]}...</div></div>' for p in github])
-    
-    finance_html = "".join([f'<div class="finance-item"><div class="f-name">{f["name"]}</div><div class="f-price">{f["price"]}</div><div class="f-change" style="color:{f["color"]}">{f["change"]}</div></div>' for f in finance])
+    security_html = "".join([f'<li><span class="date" style="color:#27ae60;">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in security])
+    hn_html = "".join([f'<li><span class="date" style="color:#f39c12;font-weight:bold;">{n["score"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hn])
+    cve_html = "".join([f'<div class="cve-item"><a href="{c["link"]}" target="_blank" class="cve-id">{c["id"]}</a><p class="cve-desc">{c["desc"]}</p></div>' for c in cve])
+    finance_html = "".join([f'<div class="f-item"><div class="f-name">{f["name"]}</div><div class="f-price">{f["price"]}</div><div class="f-change" style="color:{f["color"]}">{f["change"]}</div></div>' for f in finance])
 
-    html = f"""
+    # 完整的 HTML 模板
+    html_template = f"""
     <!DOCTYPE html>
     <html lang="zh-CN">
     <head>
@@ -191,94 +169,85 @@ def generate_html(readhub, solidot, cve, hf, github, finance):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Geek Dashboard</title>
         <style>
-            :root {{ --bg: #f0f2f5; --card-bg: #ffffff; --text: #2c3e50; }}
-            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 13px; }}
-            .container {{ max-width: 1200px; margin: 0 auto; }}
+            :root {{ --bg: #f4f7f6; --card: #ffffff; --text: #2c3e50; --link: #34495e; --hover: #3498db; }}
+            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 13px; }}
             
-            header {{ display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }}
-            h1 {{ margin: 0; font-size: 1.4em; color: #34495e; font-weight: 800; letter-spacing: -0.5px; }}
-            .time {{ color: #95a5a6; font-family: monospace; font-size: 0.9em; }}
+            .container {{ max-width: 1100px; margin: 0 auto; }}
             
-            .dashboard {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }}
+            header {{ display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; }}
+            h1 {{ margin: 0; font-size: 1.5em; color: #2c3e50; letter-spacing: -0.5px; }}
+            .time {{ color: #7f8c8d; font-family: monospace; }}
             
-            .card {{ background: var(--card-bg); border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e1e4e8; }}
-            .card:hover {{ box-shadow: 0 4px 6px rgba(0,0,0,0.08); transform: translateY(-1px); transition: all 0.2s; }}
+            /* 紧凑网格布局 */
+            .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }}
             
-            .card h2 {{ margin-top: 0; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; display: flex; align-items: center; border-bottom: 2px solid transparent; }}
+            .card {{ background: var(--card); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eaeaea; }}
+            .card h2 {{ margin: 0 0 12px 0; font-size: 1.1em; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; display: flex; align-items: center; justify-content: space-between; color: #2c3e50; }}
             
-            /* 各板块颜色定义 */
-            .readhub h2 {{ color: #007bff; border-color: #007bff; }}
-            .security h2 {{ color: #e74c3c; border-color: #e74c3c; }}
-            .ai h2 {{ color: #f39c12; border-color: #f39c12; }}
-            .github h2 {{ color: #24292e; border-color: #24292e; }}
-            .finance h2 {{ color: #27ae60; border-color: #27ae60; }}
+            /* 强调色条 */
+            .readhub h2 {{ border-color: #3498db; }}
+            .security h2 {{ border-color: #2ecc71; }}
+            .hn h2 {{ border-color: #f39c12; }}
+            .cve h2 {{ border-color: #e74c3c; }}
+            .finance h2 {{ border-color: #9b59b6; }}
 
-            ul {{ list-style: none; padding: 0; margin: 0; }}
-            ul li {{ padding: 6px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; }}
-            ul li:last-child {{ border-bottom: none; }}
+            ul {{ padding: 0; margin: 0; list-style: none; }}
+            li {{ padding: 6px 0; border-bottom: 1px dashed #f0f0f0; display: flex; align-items: baseline; }}
+            li:last-child {{ border-bottom: none; }}
             
-            .date {{ font-family: monospace; color: #999; margin-right: 8px; min-width: 40px; text-align: right; flex-shrink: 0; font-size: 0.9em; }}
-            a {{ text-decoration: none; color: #333; transition: color 0.2s; }}
-            a:hover {{ color: #0056b3; }}
+            .date {{ color: #bdc3c7; margin-right: 10px; min-width: 45px; text-align: right; font-family: monospace; flex-shrink: 0; }}
             
-            /* 项目列表样式 */
-            .project-item {{ padding: 8px 0; border-bottom: 1px solid #f1f1f1; }}
-            .p-title {{ font-weight: 600; font-size: 1em; display: flex; justify-content: space-between; }}
-            .p-desc {{ font-size: 0.85em; color: #666; margin-top: 3px; line-height: 1.3; }}
-            .stars {{ font-size: 0.8em; background: #fafbfc; border: 1px solid #e1e4e8; padding: 0 5px; border-radius: 4px; }}
+            a {{ text-decoration: none; color: var(--link); transition: color 0.2s; }}
+            a:hover {{ color: var(--hover); }}
             
-            /* 金融样式 */
-            .finance-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }}
-            .finance-item {{ text-align: center; background: #f8f9fa; padding: 8px; border-radius: 6px; }}
-            .f-name {{ font-size: 0.8em; color: #7f8c8d; }}
-            .f-price {{ font-weight: bold; margin: 2px 0; font-family: monospace; font-size: 1.1em; }}
+            /* CVE 特殊样式 */
+            .cve-item {{ margin-bottom: 8px; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px; }}
+            .cve-id {{ color: #e74c3c; font-weight: bold; font-family: monospace; font-size: 1.05em; }}
+            .cve-desc {{ margin: 2px 0 0 0; color: #7f8c8d; line-height: 1.4; font-size: 0.9em; }}
             
-            /* 安全板块特殊布局 */
-            .split-section {{ display: flex; flex-direction: column; gap: 15px; }}
-            .sub-header {{ font-size: 0.85em; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px; display: block; }}
+            /* 金融横条样式 */
+            .finance-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }}
+            .f-item {{ text-align: center; background: #fafafa; padding: 8px; border-radius: 6px; }}
+            .f-name {{ font-size: 0.8em; color: #95a5a6; }}
+            .f-price {{ font-weight: bold; font-size: 1.1em; margin: 2px 0; font-family: monospace; }}
+            .f-change {{ font-size: 0.85em; font-weight: bold; }}
 
-            @media (max-width: 768px) {{ .dashboard {{ grid-template-columns: 1fr; }} }}
+            @media (max-width: 700px) {{ 
+                .grid {{ grid-template-columns: 1fr; }} 
+                .finance-grid {{ grid-template-columns: repeat(2, 1fr); }}
+            }}
         </style>
     </head>
     <body>
         <div class="container">
             <header>
                 <h1>🚀 Geek Dashboard</h1>
-                <span class="time">{date_str}</span>
+                <div class="time">{now}</div>
             </header>
             
-            <div class="dashboard">
+            <div class="grid">
                 <div class="card readhub">
                     <h2>📰 ReadHub Tech</h2>
                     <ul>{readhub_html}</ul>
                 </div>
 
                 <div class="card security">
-                    <h2>🛡️ Security Intel</h2>
-                    <div class="split-section">
-                        <div>
-                            <span class="sub-header">Solidot / News</span>
-                            <ul>{solidot_html}</ul>
-                        </div>
-                        <div>
-                            <span class="sub-header" style="color:#e74c3c;">Latest CVE Alerts</span>
-                            <ul>{cve_html}</ul>
-                        </div>
-                    </div>
+                    <h2>🛡️ FreeBuf Security</h2>
+                    <ul>{security_html}</ul>
                 </div>
 
-                <div class="card ai">
-                    <h2>🤖 Hugging Face Trending</h2>
-                    <ul>{hf_html}</ul>
+                <div class="card hn">
+                    <h2>🍊 Hacker News</h2>
+                    <ul>{hn_html}</ul>
                 </div>
                 
-                <div class="card github">
-                    <h2>🐍 GitHub Python</h2>
-                    {github_html}
+                <div class="card cve">
+                    <h2>🚨 Latest CVE</h2>
+                    {cve_html}
                 </div>
-                
-                <div class="card finance">
-                    <h2>💰 Market</h2>
+
+                <div class="card finance" style="grid-column: 1 / -1;">
+                    <h2>💰 Market Overview</h2>
                     <div class="finance-grid">
                         {finance_html}
                     </div>
@@ -290,25 +259,23 @@ def generate_html(readhub, solidot, cve, hf, github, finance):
     """
     
     with open("index.html", "w", encoding="utf-8") as f:
-        f.write(html)
+        f.write(html_template)
+    print(">>> 页面生成完毕: index.html")
 
+# =============================================================================
+# 主程序
+# =============================================================================
 if __name__ == "__main__":
-    print(">>> 正在抓取 ReadHub...")
-    readhub_data = get_readhub()
+    print("=== 开始任务 ===")
     
-    print(">>> 正在抓取 Solidot & CVE...")
-    solidot_data = get_solidot()
+    # 获取数据
+    rh_data = get_readhub()
+    sec_data = get_security_news()
     cve_data = get_cve_alerts()
+    hn_data = get_hacker_news()
+    fin_data = get_finance()
     
-    print(">>> 正在抓取 Hugging Face...")
-    hf_data = get_huggingface()
+    # 生成页面
+    generate_html(rh_data, sec_data, cve_data, hn_data, fin_data)
     
-    print(">>> 正在抓取 GitHub...")
-    github_data = get_github_trending()
-    
-    print(">>> 正在抓取 Finance...")
-    finance_data = get_finance()
-    
-    print(">>> 生成页面...")
-    generate_html(readhub_data, solidot_data, cve_data, hf_data, github_data, finance_data)
-    print(">>> 完成! 请打开 index.html")
+    print("=== 任务结束 ===")
