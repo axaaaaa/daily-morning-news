@@ -4,144 +4,98 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>我的极客仪表盘</title>
+        <title>Geek Dashboard</title>
         <style>
-            :root { --bg: #f4f6f8; --card-bg: #ffffff; --text: #333; --accent: #007bff; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 13px; }
+            :root { --bg: #f0f2f5; --card-bg: #ffffff; --text: #2c3e50; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 13px; }
+            .container { max-width: 1200px; margin: 0 auto; }
             
-            /* 1. 容器变小 */
-            .container { max-width: 1100px; margin: 0 auto; } 
+            header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+            h1 { margin: 0; font-size: 1.4em; color: #34495e; font-weight: 800; letter-spacing: -0.5px; }
+            .time { color: #95a5a6; font-family: monospace; font-size: 0.9em; }
             
-            header { text-align: center; margin-bottom: 20px; }
-            h1 { margin: 0; font-size: 1.6em; color: #2c3e50; }
-            .time { color: #7f8c8d; font-size: 0.85em; margin-top: 4px; }
+            .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
             
-            /* 2. Grid 变紧凑，卡片最小宽度减小 */
-            .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+            .card { background: var(--card-bg); border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e1e4e8; }
+            .card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.08); transform: translateY(-1px); transition: all 0.2s; }
             
-            /* 3. 卡片内边距减小 */
-            .card { background: var(--card-bg); border-radius: 10px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-            .card:hover { transform: translateY(-2px); box-shadow: 0 6px 10px rgba(0,0,0,0.08); }
+            .card h2 { margin-top: 0; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; display: flex; align-items: center; border-bottom: 2px solid transparent; }
             
-            /* 标题变小 */
-            .card h2 { margin-top: 0; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; color: #007bff; display: flex; align-items: center; justify-content: space-between;}
+            /* 各板块颜色定义 */
+            .readhub h2 { color: #007bff; border-color: #007bff; }
+            .security h2 { color: #e74c3c; border-color: #e74c3c; }
+            .ai h2 { color: #f39c12; border-color: #f39c12; }
+            .github h2 { color: #24292e; border-color: #24292e; }
+            .finance h2 { color: #27ae60; border-color: #27ae60; }
+
+            ul { list-style: none; padding: 0; margin: 0; }
+            ul li { padding: 6px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; }
+            ul li:last-child { border-bottom: none; }
             
-            ul.news-list { list-style: none; padding: 0; }
+            .date { font-family: monospace; color: #999; margin-right: 8px; min-width: 40px; text-align: right; flex-shrink: 0; font-size: 0.9em; }
+            a { text-decoration: none; color: #333; transition: color 0.2s; }
+            a:hover { color: #0056b3; }
             
-            /* 列表行高变小 */
-            ul.news-list li { padding: 5px 0; border-bottom: 1px dashed #eee; display: flex; align-items: baseline; }
-            ul.news-list li:last-child { border-bottom: none; }
+            /* 项目列表样式 */
+            .project-item { padding: 8px 0; border-bottom: 1px solid #f1f1f1; }
+            .p-title { font-weight: 600; font-size: 1em; display: flex; justify-content: space-between; }
+            .p-desc { font-size: 0.85em; color: #666; margin-top: 3px; line-height: 1.3; }
+            .stars { font-size: 0.8em; background: #fafbfc; border: 1px solid #e1e4e8; padding: 0 5px; border-radius: 4px; }
             
-            /* 日期标签变小 */
-            .date { font-size: 0.85em; color: #999; margin-right: 8px; min-width: 45px; text-align: right; flex-shrink: 0; }
+            /* 金融样式 */
+            .finance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .finance-item { text-align: center; background: #f8f9fa; padding: 8px; border-radius: 6px; }
+            .f-name { font-size: 0.8em; color: #7f8c8d; }
+            .f-price { font-weight: bold; margin: 2px 0; font-family: monospace; font-size: 1.1em; }
             
-            a { text-decoration: none; color: #333; transition: color 0.2s; line-height: 1.3; }
-            a:hover { color: var(--accent); }
-            
-            .project-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #f9f9f9; }
-            .p-title { font-weight: bold; font-size: 1em; }
-            .p-desc { font-size: 0.9em; color: #666; margin-top: 2px; line-height: 1.3; }
-            .stars { float: right; font-size: 0.8em; color: #f1c40f; background: #fffbe6; padding: 1px 5px; border-radius: 3px; }
-            
-            .finance-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .finance-item { text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px; }
-            .f-name { font-size: 0.85em; color: #666; }
-            .f-price { font-size: 1.1em; font-weight: bold; margin: 3px 0; }
-            .f-change { font-size: 0.85em; font-weight: bold; }
-            
+            /* 安全板块特殊布局 */
+            .split-section { display: flex; flex-direction: column; gap: 15px; }
+            .sub-header { font-size: 0.85em; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px; display: block; }
+
             @media (max-width: 768px) { .dashboard { grid-template-columns: 1fr; } }
         </style>
     </head>
     <body>
         <div class="container">
             <header>
-                <h1>🚀 Daily Dashboard</h1>
-                <p class="time">Update: 2025-12-10 19:01</p>
+                <h1>🚀 Geek Dashboard</h1>
+                <span class="time">2025-12-10 19:26</span>
             </header>
             
             <div class="dashboard">
-                <div class="card">
-                    <h2>📰 36Kr</h2>
-                    <ul class="news-list">
-                        <li><span class="date">12-10</span><a href="https://36kr.com/p/3589443788538120?f=rss" target="_blank">2000+人次到场，70余位大咖激辩AI下半场生存法则，「2025甲子引力年终盛典」圆满落幕</a></li><li><span class="date">12-10</span><a href="https://36kr.com/p/3589434203602945?f=rss" target="_blank">泡泡玛特「闯美」成功了？</a></li><li><span class="date">12-10</span><a href="https://36kr.com/p/3589320428879873?f=rss" target="_blank">美团AI转向，前字节视觉模型AI平台负责人潘欣加入｜智能涌现独家</a></li><li><span class="date">12-10</span><a href="https://36kr.com/p/3589290026107138?f=rss" target="_blank">玩家口中「凉了」的国民游戏，在工作日晚上排起长队</a></li><li><span class="date">12-10</span><a href="https://36kr.com/p/3589104354738435?f=rss" target="_blank">哈工大技术成果转化，打破超隔热材料国际封锁，「埃尔默」完成数千万元天使轮融资 | 36氪首发</a></li><li><span class="date">12-10</span><a href="https://36kr.com/p/3589076472872964?f=rss" target="_blank">快造科技获高瓴、美团领投数亿元B轮融资，曾创下3D打印行业最高众筹记录｜36氪首发</a></li><li><span class="date">12-10</span><a href="https://36kr.com/p/3589057371046150?f=rss" target="_blank">出海商机｜金华水果品牌「致承果业」规划对俄出口业务，寻求合作伙伴</a></li><li><span class="date">12-10</span><a href="https://36kr.com/p/3588961105330434?f=rss" target="_blank">8点1氪｜山姆回应“麻薯盒内出现活老鼠”；水银体温计明年起禁产；京东外卖回应“随心囤”Bug ：将承担商家全部损失</a></li><li><span class="date">12-10</span><a href="https://36kr.com/p/3588071118356480?f=rss" target="_blank">百万“抗癌针”、长效降脂针，真降价了 ｜焦点分析</a></li><li><span class="date">12-09</span><a href="https://36kr.com/p/3588167604584710?f=rss" target="_blank">氪星晚报｜鸿蒙智行问界、智界、享界、尊界、尚界宣布全面深化战略合作；中国贸促会会长率中国企业家代表团访美；我国成功发射遥感四十七号卫星</a></li>
-                    </ul>
+                <div class="card readhub">
+                    <h2>📰 ReadHub Tech</h2>
+                    <ul></ul>
                 </div>
 
-                <div class="card">
-                    <h2>🍊 Hacker News</h2>
-                    <ul class="news-list">
-                        <li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">🔥548</span><a href="https://lwn.net/Articles/1049831/" target="_blank">Rust in the kernel is no longer experimental</a></li><li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">🔥2653</span><a href="https://dosaygo-studio.github.io/hn-front-page-2035/news" target="_blank">Show HN: Gemini Pro 3 hallucinates the HN front page 10 years from now</a></li><li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">🔥86</span><a href="https://eli.thegreenplace.net/2025/revisiting-lets-build-a-compiler/" target="_blank">Revisiting "Let's Build a Compiler"</a></li><li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">🔥546</span><a href="https://www.digitalpublicgoods.net/r/peertube" target="_blank">PeerTube is recognized as a digital public good by Digital Public Goods Alliance</a></li><li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">🔥39</span><a href="https://eamonnsullivan.co.uk/posts-output/email-setup/2025-12-3-putting-email-in-its-place/" target="_blank">Putting email in its place with Emacs and Mu4e</a></li><li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">🔥151</span><a href="https://blog.mozilla.org/en/mozilla/av1-video-codec-wins-emmy/" target="_blank">When a video codec wins an Emmy</a></li><li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">🔥612</span><a href="https://mistral.ai/news/devstral-2-vibe-cli" target="_blank">Mistral releases Devstral2 and Mistral Vibe CLI</a></li><li><span class="date" style="color:#ff6600; font-weight:bold; min-width:45px;">🔥292</span><a href="https://adamj.eu/tech/2025/12/03/django-whats-new-6.0/" target="_blank">Django: what’s new in 6.0</a></li>
-                    </ul>
+                <div class="card security">
+                    <h2>🛡️ Security Intel</h2>
+                    <div class="split-section">
+                        <div>
+                            <span class="sub-header">Solidot / News</span>
+                            <ul><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83009" target="_blank">Microsoft Excel 诞生 40 年</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83008" target="_blank">癌症率激增引发癌症过早发现的争论</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83007" target="_blank">加密货币帮助犯罪分子洗钱和逃避制裁</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83006" target="_blank">RMS 谈 ChatGPT</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83005" target="_blank">欧盟对 Google AI 展开反垄断调查</a></li><li><span class="date" style="color:#2ecc71;"></span><a href="https://www.solidot.org/story?sid=83004" target="_blank">睡眠不足与预期寿命减少相关</a></li></ul>
+                        </div>
+                        <div>
+                            <span class="sub-header" style="color:#e74c3c;">Latest CVE Alerts</span>
+                            <ul><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li><li style="display:block; border-bottom:1px solid #eee; padding:6px 0;"><div style="display:flex; justify-content:space-between;"><a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=Unknown" target="_blank" style="color:#e74c3c; font-weight:bold; font-family:monospace;">Unknown</a></div><div style="font-size:0.8em; color:#666; margin-top:2px;">暂无描述</div></li></ul>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="card">
-                    <h2>⚡ V2EX</h2>
-                    <ul class="news-list">
-                        <li><span class="date" style="min-width:45px;">💬145</span><a href="https://www.v2ex.com/t/1177922" target="_blank">今早去金拱门（麦当劳）吃早餐发现，自动收桌</a></li><li><span class="date" style="min-width:45px;">💬132</span><a href="https://www.v2ex.com/t/1177944" target="_blank">今天开始带大家炒股</a></li><li><span class="date" style="min-width:45px;">💬102</span><a href="https://www.v2ex.com/t/1177921" target="_blank">微信文件过期太反人类了</a></li><li><span class="date" style="min-width:45px;">💬88</span><a href="https://www.v2ex.com/t/1177932" target="_blank">怎么天天都有过生日也要发帖说一下的</a></li><li><span class="date" style="min-width:45px;">💬66</span><a href="https://www.v2ex.com/t/1177980" target="_blank">洗地机到底值不值的买</a></li>
-                    </ul>
+                <div class="card ai">
+                    <h2>🤖 Hugging Face Trending</h2>
+                    <ul><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B" target="_blank">microsoft/VibeVoice-Realtime-0.5B</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/Tongyi-MAI/Z-Image-Turbo" target="_blank">Tongyi-MAI/Z-Image-Turbo</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/zai-org/GLM-4.6V-Flash" target="_blank">zai-org/GLM-4.6V-Flash</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/zai-org/GLM-4.6V" target="_blank">zai-org/GLM-4.6V</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2" target="_blank">deepseek-ai/DeepSeek-V3.2</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512" target="_blank">mistralai/Devstral-Small-2-24B-Instruct-2512</a></li><li><span class="date" style="color:#f1c40f; font-weight:bold;">🔥</span><a href="https://huggingface.co/EssentialAI/rnj-1-instruct" target="_blank">EssentialAI/rnj-1-instruct</a></li></ul>
                 </div>
                 
-                <div class="card">
-                    <h2>🐍 GitHub Trending</h2>
-                    
-        <div class="project-item">
-            <div class="p-title"><a href="https://github.com/datawhalechina/hello-agents" target="_blank">datawhalechina/hello-agents</a> <span class="stars">⭐439</span></div>
-            <div class="p-desc">📚 《从零开始构建智能体》——从零开始的智能体原理与实践教程...</div> 
-        </div>
-        <div class="project-item">
-            <div class="p-title"><a href="https://github.com/microsoft/VibeVoice" target="_blank">microsoft/VibeVoice</a> <span class="stars">⭐2,638</span></div>
-            <div class="p-desc">Open-Source Frontier Voice AI...</div> 
-        </div>
-        <div class="project-item">
-            <div class="p-title"><a href="https://github.com/666ghj/BettaFish" target="_blank">666ghj/BettaFish</a> <span class="stars">⭐464</span></div>
-            <div class="p-desc">微舆：人人可用的多Agent舆情分析助手，打破信息茧房，还原舆情原貌，预测未来走向，辅助决策！从0实现，不依赖任何框架。...</div> 
-        </div>
-        <div class="project-item">
-            <div class="p-title"><a href="https://github.com/infiniflow/ragflow" target="_blank">infiniflow/ragflow</a> <span class="stars">⭐187</span></div>
-            <div class="p-desc">RAGFlow is a leading open-source Retrieval-Augmented Generat...</div> 
-        </div>
-        <div class="project-item">
-            <div class="p-title"><a href="https://github.com/google/adk-samples" target="_blank">google/adk-samples</a> <span class="stars">⭐76</span></div>
-            <div class="p-desc">A collection of sample agents built with Agent Development K...</div> 
-        </div>
-        <div class="project-item">
-            <div class="p-title"><a href="https://github.com/AsyncFuncAI/deepwiki-open" target="_blank">AsyncFuncAI/deepwiki-open</a> <span class="stars">⭐27</span></div>
-            <div class="p-desc">Open Source DeepWiki: AI-Powered Wiki Generator for GitHub/G...</div> 
-        </div>
-        <div class="project-item">
-            <div class="p-title"><a href="https://github.com/zhu-xlab/GlobalBuildingAtlas" target="_blank">zhu-xlab/GlobalBuildingAtlas</a> <span class="stars">⭐143</span></div>
-            <div class="p-desc">暂无描述...</div> 
-        </div>
-        <div class="project-item">
-            <div class="p-title"><a href="https://github.com/rany2/edge-tts" target="_blank">rany2/edge-tts</a> <span class="stars">⭐9</span></div>
-            <div class="p-desc">Use Microsoft Edge's online text-to-speech service from Pyth...</div> 
-        </div>
+                <div class="card github">
+                    <h2>🐍 GitHub Python</h2>
+                    <div class="project-item"><div class="p-title"><a href="https://github.com/datawhalechina/hello-agents" target="_blank">datawhalechina/hello-agents</a> <span class="stars">⭐439</span></div><div class="p-desc">📚 《从零开始构建智能体》——从零开始的智能体原理与实践教程...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/microsoft/VibeVoice" target="_blank">microsoft/VibeVoice</a> <span class="stars">⭐988</span></div><div class="p-desc">Open-Source Frontier Voice AI...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/666ghj/BettaFish" target="_blank">666ghj/BettaFish</a> <span class="stars">⭐331</span></div><div class="p-desc">微舆：人人可用的多Agent舆情分析助手，打破信息茧房，还原舆情原貌，预测未来走向，辅助决策！从0实...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/infiniflow/ragflow" target="_blank">infiniflow/ragflow</a> <span class="stars">⭐187</span></div><div class="p-desc">RAGFlow is a leading open-source Retrieval-Augment...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/google/adk-samples" target="_blank">google/adk-samples</a> <span class="stars">⭐285</span></div><div class="p-desc">A collection of sample agents built with Agent Dev...</div></div><div class="project-item"><div class="p-title"><a href="https://github.com/AsyncFuncAI/deepwiki-open" target="_blank">AsyncFuncAI/deepwiki-open</a> <span class="stars">⭐27</span></div><div class="p-desc">Open Source DeepWiki: AI-Powered Wiki Generator fo...</div></div>
                 </div>
                 
-                <div class="card">
+                <div class="card finance">
                     <h2>💰 Market</h2>
                     <div class="finance-grid">
-                        
-        <div class="finance-item">
-            <div class="f-name">上证指数</div>
-            <div class="f-price">3900.50</div>
-            <div class="f-change" style="color:#00b894">-0.23%</div>
-        </div>
-        <div class="finance-item">
-            <div class="f-name">纳斯达克</div>
-            <div class="f-price">23576.49</div>
-            <div class="f-change" style="color:#d63031">+0.13%</div>
-        </div>
-        <div class="finance-item">
-            <div class="f-name">比特币</div>
-            <div class="f-price">92379.46</div>
-            <div class="f-change" style="color:#00b894">-0.34%</div>
-        </div>
-        <div class="finance-item">
-            <div class="f-name">英伟达</div>
-            <div class="f-price">184.97</div>
-            <div class="f-change" style="color:#00b894">-0.31%</div>
-        </div>
+                        <div class="finance-item"><div class="f-name">纳斯达克</div><div class="f-price">23576.49</div><div class="f-change" style="color:#d63031">+0.13%</div></div><div class="finance-item"><div class="f-name">比特币</div><div class="f-price">92366.45</div><div class="f-change" style="color:#00b894">-0.35%</div></div><div class="finance-item"><div class="f-name">英伟达</div><div class="f-price">184.97</div><div class="f-change" style="color:#00b894">-0.31%</div></div>
                     </div>
                 </div>
             </div>
