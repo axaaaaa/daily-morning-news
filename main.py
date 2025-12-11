@@ -281,16 +281,7 @@ def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
                     <h2>🍊 Hacker News (YC)</h2>
                     <ul>{hn_html}</ul>
                 </div>
-                
-                <div class="card x-trends">
-                    <h2>✖️ X (Twitter) Trends</h2>
-                    <ul>{x_html}</ul>
-                </div>
 
-                <div class="card yt-trends">
-                    <h2>▶️ YouTube Trending</h2>
-                    <ul>{yt_html}</ul>
-                </div>
 
                 <div class="card finance" style="grid-column: 1 / -1;">
                     <h2>💰 Market Overview</h2>
@@ -317,8 +308,8 @@ if __name__ == "__main__":
     hackread = get_hackread()
     thn = get_thehackernews()
     hn = get_hacker_news()
-    x_data = get_x_trends()     # 新增
-    yt_data = get_youtube_trends() # 新增
+    #x_data = get_x_trends()     # 新增
+    #yt_data = get_youtube_trends() # 新增
     fin = get_finance()
     
     generate_html(hackread, thn, hn, x_data, yt_data, fin)
