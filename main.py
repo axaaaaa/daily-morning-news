@@ -78,115 +78,7 @@ def get_hacker_news():
         news.append({"title": "HN API 连接失败", "link": "#", "score": "Err"})
     return news
 
-# =============================================================================
-# 4. [新增] X (Twitter) Global Trends
-#    源: Trends24 (比爬官方推特稳100倍)
-# =============================================================================
-def get_x_trends():
-    data = []
-    print(">>> 正在获取 X (Twitter) Trends...")
-    # 这里抓取全球榜 (Worldwide)，如果想看美国榜改 url 为 https://trends24.in/united-states/
-    url = "https://trends24.in/" 
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=10)
-        soup = BeautifulSoup(r.text, 'html.parser')
-        
-        # Trends24 的结构是很多个卡片，第一个卡片是“现在”
-        current_card = soup.select_one('#trend-list .trend-card')
-        if current_card:
-            trends = current_card.select('li a')
-            for t in trends[:8]: # 取前8个
-                name = t.text.strip()
-                link = t['href']
-                # 尝试获取热度 (span class="tweet-count")
-                count_span = t.find_next_sibling('span')
-                heat = count_span.text.strip() if count_span else "Hot"
-                
-                data.append({
-                    "title": name,
-                    "link": link,
-                    "heat": heat
-                })
-    except Exception as e:
-        print(f"X Trends Error: {e}")
-        data.append({"title": "X Trends 获取失败", "link": "#", "heat": "Err"})
-    return data
 
-# =============================================================================
-# 5. [新增] YouTube Trending
-#    源: Kworb (纯数据统计站，速度快)
-# =============================================================================
-def get_youtube_trends():
-    data = []
-    print(">>> 正在获取 YouTube Trending...")
-    # Kworb 的全球 YouTube 趋势榜
-    url = "https://kworb.net/youtube/trending.html"
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=10)
-        soup = BeautifulSoup(r.text, 'html.parser')
-        
-        # 数据在表格中
-        rows = soup.select('table tbody tr')
-        for row in rows[:8]:
-            # Kworb 表格结构: 链接在第一个含 a 的 td 里
-            link_tag = row.select_one('a')
-            if link_tag:
-                title = link_tag.text.strip()
-                # 补全链接
-                href = link_tag['href']
-                if "http" not in href:
-                    href = "https://www.youtube.com/watch?v=" + href.split('/')[-1].replace('.html', '')
-                
-                # 获取播放量增量 (通常在第三列)
-                tds = row.select('td')
-                views = "Hot"
-                if len(tds) > 2:
-                    views = "▶" + tds[2].text.strip()
-
-                data.append({
-                    "title": title,
-                    "link": href,
-                    "views": views
-                })
-    except Exception as e:
-        print(f"YouTube Error: {e}")
-        data.append({"title": "YT Trending 获取失败", "link": "#", "views": "Err"})
-    return data
-
-# =============================================================================
-# 6. 金融数据 (Yahoo)
-# =============================================================================
-def get_finance():
-    data = []
-    print(">>> 正在获取金融数据...")
-    symbols = [
-        {"name": "BTC", "code": "BTC-USD"},
-        {"name": "ETH", "code": "ETH-USD"},
-        {"name": "NVDA", "code": "NVDA"},
-        {"name": "NASDAQ", "code": "^IXIC"}
-    ]
-    for item in symbols:
-        try:
-            ticker = yf.Ticker(item["code"])
-            hist = ticker.history(period="2d")
-            if len(hist) > 0:
-                price = hist['Close'].iloc[-1]
-                change_str, color = "-", "#333"
-                if len(hist) > 1:
-                    prev = hist['Close'].iloc[0]
-                    pct = ((price - prev) / prev) * 100
-                    change_str = f"{pct:+.2f}%"
-                    color = "#e74c3c" if pct > 0 else "#2ecc71"
-                
-                data.append({
-                    "name": item["name"],
-                    "price": f"{price:,.1f}",
-                    "change": change_str,
-                    "color": color
-                })
-        except:
-            pass
-    return data
 
 # =============================================================================
 # 生成 HTML
@@ -199,14 +91,6 @@ def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
     thn_html = "".join([f'<li><span class="date" style="color:#1abc9c;">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in thn])
     hn_html = "".join([f'<li><span class="date" style="color:#f39c12;font-weight:bold;">{n["score"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hn])
     
-    # X Trends 生成 (黑色主题)
-    x_html = "".join([f'<li><span class="date" style="color:#000;font-weight:bold;font-size:0.8em;">{n["heat"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in x_trends])
-    
-    # YouTube Trends 生成 (红色主题)
-    yt_html = "".join([f'<li><span class="date" style="color:#c4302b;font-size:0.8em;">{n["views"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in yt_trends])
-    
-    # 金融生成
-    finance_html = "".join([f'<div class="f-item"><div class="f-name">{f["name"]}</div><div class="f-price">{f["price"]}</div><div class="f-change" style="color:{f["color"]}">{f["change"]}</div></div>' for f in finance])
 
     html = f"""
     <!DOCTYPE html>
@@ -283,12 +167,6 @@ def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
                 </div>
 
 
-                <div class="card finance" style="grid-column: 1 / -1;">
-                    <h2>💰 Market Overview</h2>
-                    <div class="finance-grid">
-                        {finance_html}
-                    </div>
-                </div>
             </div>
         </div>
     </body>
@@ -310,7 +188,7 @@ if __name__ == "__main__":
     hn = get_hacker_news()
     #x_data = get_x_trends()     # 新增
     #yt_data = get_youtube_trends() # 新增
-    fin = get_finance()
+    #fin = get_finance()
     
     generate_html(hackread, thn, hn, x_data, yt_data, fin)
     
