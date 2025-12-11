@@ -1,16 +1,7 @@
 # -*- coding: utf-8 -*-
 import requests
 import feedparser
-import yfinance as yf
-from bs4 import BeautifulSoup
 import datetime
-import time
-
-# 伪装浏览器头，防止第三方统计网站拦截
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept-Language': 'en-US,en;q=0.9'
-}
 
 # =============================================================================
 # 1. HackRead (RSS)
@@ -65,6 +56,7 @@ def get_hacker_news():
     news = []
     print(">>> 正在获取 Hacker News (YC)...")
     try:
+        # 增加超时设置防止卡顿
         ids = requests.get("https://hacker-news.firebaseio.com/v0/topstories.json", timeout=10).json()[:8]
         for i in ids:
             item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{i}.json", timeout=5).json()
@@ -78,19 +70,16 @@ def get_hacker_news():
         news.append({"title": "HN API 连接失败", "link": "#", "score": "Err"})
     return news
 
-
-
 # =============================================================================
 # 生成 HTML
 # =============================================================================
-def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
+def generate_html(hackread, thn, hn):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     
-    # 基础列表生成
+    # 列表 HTML 生成
     hackread_html = "".join([f'<li><span class="date">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hackread])
     thn_html = "".join([f'<li><span class="date" style="color:#1abc9c;">{n["date"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in thn])
     hn_html = "".join([f'<li><span class="date" style="color:#f39c12;font-weight:bold;">{n["score"]}</span><a href="{n["link"]}" target="_blank">{n["title"]}</a></li>' for n in hn])
-    
 
     html = f"""
     <!DOCTYPE html>
@@ -119,9 +108,6 @@ def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
             .hackread h2 {{ border-color: #e74c3c; }} /* 红 */
             .thn h2 {{ border-color: #1abc9c; }}      /* 青 */
             .hn h2 {{ border-color: #f39c12; }}       /* 橙 */
-            .x-trends h2 {{ border-color: #000000; }} /* 黑 (X) */
-            .yt-trends h2 {{ border-color: #c4302b; }} /* 红 (YouTube) */
-            .finance h2 {{ border-color: #3498db; }}  /* 蓝 */
 
             ul {{ padding: 0; margin: 0; list-style: none; }}
             li {{ padding: 6px 0; border-bottom: 1px dashed #f0f0f0; display: flex; align-items: baseline; }}
@@ -131,15 +117,8 @@ def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
             a {{ text-decoration: none; color: var(--link); transition: color 0.2s; }}
             a:hover {{ color: #3498db; }}
             
-            /* Finance Grid */
-            .finance-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }}
-            .f-item {{ text-align: center; background: #fafafa; padding: 8px; border-radius: 6px; }}
-            .f-name {{ font-size: 0.8em; color: #95a5a6; }}
-            .f-price {{ font-weight: bold; font-size: 1.1em; margin: 2px 0; font-family: monospace; }}
-            
             @media (max-width: 768px) {{ 
                 .grid {{ grid-template-columns: 1fr; }} 
-                .finance-grid {{ grid-template-columns: repeat(2, 1fr); }}
             }}
         </style>
     </head>
@@ -165,8 +144,6 @@ def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
                     <h2>🍊 Hacker News (YC)</h2>
                     <ul>{hn_html}</ul>
                 </div>
-
-
             </div>
         </div>
     </body>
@@ -183,13 +160,10 @@ def generate_html(hackread, thn, hn, x_trends, yt_trends, finance):
 if __name__ == "__main__":
     print("=== 开始任务 ===")
     
-    hackread = get_hackread()
-    thn = get_thehackernews()
-    hn = get_hacker_news()
-    #x_data = get_x_trends()     # 新增
-    #yt_data = get_youtube_trends() # 新增
-    #fin = get_finance()
+    hackread_data = get_hackread()
+    thn_data = get_thehackernews()
+    hn_data = get_hacker_news()
     
-    generate_html(hackread, thn, hn, x_data, yt_data, fin)
+    generate_html(hackread_data, thn_data, hn_data)
     
     print("=== 完成 ===")
